@@ -6,8 +6,14 @@
  * http://www.arduino.cc/en/Tutorial/WebClientRepeating
  */
 
+#include <SD.h>
 #include <SPI.h>
 #include <Ethernet.h>
+
+// File handler
+File myFile;
+int fileCount = 0;
+String fileName = "";
 
 // assign a MAC address for the ethernet controller.
 // fill in your address here:
@@ -38,8 +44,28 @@ void setup() {
     ; // wait for serial port to connect. Needed for native USB port only
   }
 
+  Serial.print("Initializing SD card...");
+
+  if (!SD.begin(4)) {
+    Serial.println("Initialization SD failed!");
+    return;
+  }
+  Serial.println("Initialization SD done.");
+
+
+  //First free file, write into
+  fileName += fileCount;
+  fileName += ".txt";  
+  while (SD.exists(fileName)){
+    fileCount += 1;
+    fileName = "";
+    fileName += fileCount;
+    fileName += ".txt";
+  }
+  Serial.println("Writing in file: " + fileName);
+
   // give the ethernet module time to boot up:
-  delay(1000);
+  delay(2000);
   // start the Ethernet connection using a fixed IP address and DNS server:
   Ethernet.begin(mac, ip, myDns);
   // print the Ethernet board/shield's IP address:
@@ -86,6 +112,25 @@ void httpRequest() {
     client.println("Connection: close");
     client.println();
 
+
+    
+    // Writting results to file
+    myFile = SD.open(fileName, FILE_WRITE);
+    
+    // if the file opened okay, write to it:
+    if (myFile) {
+      Serial.print("Writing to: " + fileName);
+      myFile.print("Sensor read: ");
+      myFile.println(sensorReading);
+      // close the file:
+      myFile.close();
+      Serial.println("Writting SD done.");
+    } else {
+      // if the file didn't open, print an error:
+      Serial.println("Error opening test.txt");
+    }
+
+    
     // note the time that the connection was made:
     lastConnectionTime = millis();
   } else {
