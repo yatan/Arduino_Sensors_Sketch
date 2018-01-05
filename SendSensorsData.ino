@@ -9,11 +9,17 @@
 #include <SD.h>
 #include <SPI.h>
 #include <Ethernet.h>
+#include <RTClib.h>
+#include <Wire.h>
+
 
 // File handler
 File myFile;
 int fileCount = 0;
 String fileName = "";
+
+// Declaramos un RTC DS3231
+RTC_DS3231 rtc;
 
 // assign a MAC address for the ethernet controller.
 // fill in your address here:
@@ -44,13 +50,36 @@ void setup() {
     ; // wait for serial port to connect. Needed for native USB port only
   }
 
-  Serial.print("Initializing SD card...");
+  Serial.println("Initializing SD card...");
 
   if (!SD.begin(4)) {
     Serial.println("Initialization SD failed!");
     return;
   }
   Serial.println("Initialization SD done.");
+
+   // Comprobamos si tenemos el RTC conectado
+   if (! rtc.begin()) {
+   Serial.println("No hay un módulo RTC");
+   while (1);
+   }
+
+   // Setting RTC time
+   //rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+   
+   DateTime now = rtc.now();
+   Serial.print(now.day());
+   Serial.print('/');
+   Serial.print(now.month());
+   Serial.print('/');
+   Serial.print(now.year());
+   Serial.print(" ");
+   Serial.print(now.hour());
+   Serial.print(':');
+   Serial.print(now.minute());
+   Serial.print(':');
+   Serial.print(now.second());
+   Serial.println();
 
 
   //First free file, write into
