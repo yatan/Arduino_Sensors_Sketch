@@ -12,6 +12,7 @@
 #include <RTClib.h>
 #include <Wire.h>
 
+boolean debug = false;
 
 // File handler
 File myFile;
@@ -28,16 +29,21 @@ byte mac[] = {
 };
 // fill in an available IP address on your network here,
 // for manual configuration:
-IPAddress ip(192, 168, 0, 177);
+IPAddress ip(192, 168, 137, 177);
+
+// the router's gateway address:
+IPAddress gateway(192, 168, 137, 1);
+
+// the subnet:
+IPAddress subnet(255, 255, 255, 0);
 
 // fill in your Domain Name Server address here:
-IPAddress myDns(1, 1, 1, 1);
+IPAddress myDns(8, 8, 8, 8);
 
 // initialize the library instance:
 EthernetClient client;
 
-char server[] = "192.168.0.2";
-//IPAddress server(64,131,82,241);
+char server[] = "sensors.openspirulina.com";
 
 unsigned long lastConnectionTime = 0;             // last time you connected to the server, in milliseconds
 const unsigned long postingInterval = 10L * 1000L; // delay between updates, in milliseconds
@@ -96,7 +102,7 @@ void setup() {
   // give the ethernet module time to boot up:
   delay(2000);
   // start the Ethernet connection using a fixed IP address and DNS server:
-  Ethernet.begin(mac, ip, myDns);
+  Ethernet.begin(mac, ip, myDns, gateway, subnet);
   // print the Ethernet board/shield's IP address:
   Serial.print("My IP address: ");
   Serial.println(Ethernet.localIP());
@@ -131,13 +137,13 @@ void httpRequest() {
     // send the HTTP GET request:
     int sensorReading = analogRead(0);
     
-    String cadena = "GET /my-app/afegir.php?value=";
+    String cadena = "GET /afegir.php?value=";
     cadena += sensorReading;
     cadena += " HTTP/1.1";
     client.println(cadena);
     
-    client.println("Host: 192.168.0.2");
-    client.println("User-Agent: arduino-ethernet");
+    client.println("Host: sensors.openspirulina.com");
+    client.println("User-Agent: arduino-ethernet-1");
     client.println("Connection: close");
     client.println();
 
@@ -148,12 +154,14 @@ void httpRequest() {
     
     // if the file opened okay, write to it:
     if (myFile) {
-      Serial.print("Writing to: " + fileName);
+      if(debug)
+        Serial.println("Writing to: " + fileName);
       myFile.print("Sensor read: ");
       myFile.println(sensorReading);
       // close the file:
       myFile.close();
-      Serial.println("Writting SD done.");
+      if(debug)
+        Serial.println("Writting SD done.");
     } else {
       // if the file didn't open, print an error:
       Serial.println("Error opening test.txt");
