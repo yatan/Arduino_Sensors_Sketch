@@ -9,7 +9,7 @@
 #include <SD.h>
 #include <SPI.h>
 #include <Ethernet.h>
-#include <RTClib.h>
+#include "RTClib.h"
 #include <Wire.h>
 
 boolean debug = false;
