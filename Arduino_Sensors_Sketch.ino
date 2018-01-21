@@ -1,6 +1,8 @@
 /*
  * Send Sensors Data To HTTP (PHP) Server
  * 
+ * Autor: Fran Romero https://github.com/yatan
+ * 
  * Based on ethernet web client sketch:
  * Repeating Web client
  * http://www.arduino.cc/en/Tutorial/WebClientRepeating
@@ -48,6 +50,26 @@ unsigned long lastConnectionTime = 0;              // last time you connected to
 const unsigned long postingInterval = 10L * 1000L; // delay between updates, in milliseconds
 // the "L" is needed to use long type numbers
 
+String getData()
+{
+  DateTime now = rtc.now();
+  String hora = "";
+
+  hora += now.day();
+  hora += '/';
+  hora += now.month();
+  hora += '/';
+  hora += now.year();
+  hora += " ";
+  hora += now.hour();
+  hora += ':';
+  hora += now.minute();
+  hora += ':';
+  hora += now.second();
+
+  return hora;
+}
+
 void setup()
 {
   // start serial port:
@@ -77,19 +99,7 @@ void setup()
   // Setting RTC time
   //rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
 
-  DateTime now = rtc.now();
-  Serial.print(now.day());
-  Serial.print('/');
-  Serial.print(now.month());
-  Serial.print('/');
-  Serial.print(now.year());
-  Serial.print(" ");
-  Serial.print(now.hour());
-  Serial.print(':');
-  Serial.print(now.minute());
-  Serial.print(':');
-  Serial.print(now.second());
-  Serial.println();
+  Serial.println(getData());
 
   //First free file, write into
   fileName += fileCount;
@@ -164,18 +174,7 @@ void httpRequest()
       if (debug)
         Serial.println("Writing to: " + fileName);
 
-      DateTime now = rtc.now();
-      myFile.print(now.day());
-      myFile.print('/');
-      myFile.print(now.month());
-      myFile.print('/');
-      myFile.print(now.year());
-      myFile.print(" ");
-      myFile.print(now.hour());
-      myFile.print(':');
-      myFile.print(now.minute());
-      myFile.print(':');
-      myFile.print(now.second());
+      myFile.print(getData());
       myFile.print('#');
       myFile.print("sensor_1:");
       myFile.println(sensorReading);
