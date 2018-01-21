@@ -156,7 +156,22 @@ void httpRequest() {
     if (myFile) {
       if(debug)
         Serial.println("Writing to: " + fileName);
-      myFile.print("Sensor read: ");
+
+      
+      DateTime now = rtc.now();
+      myFile.print(now.day());
+      myFile.print('/');
+      myFile.print(now.month());
+      myFile.print('/');
+      myFile.print(now.year());
+      myFile.print(" ");
+      myFile.print(now.hour());
+      myFile.print(':');
+      myFile.print(now.minute());
+      myFile.print(':');
+      myFile.print(now.second());
+      myFile.print('#');
+      myFile.print("sensor_1:");
       myFile.println(sensorReading);
       // close the file:
       myFile.close();
