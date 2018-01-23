@@ -50,7 +50,7 @@ unsigned long lastConnectionTime = 0;              // last time you connected to
 const unsigned long postingInterval = 10L * 1000L; // delay between updates, in milliseconds
 // the "L" is needed to use long type numbers
 
-String getData()
+String getDateTime()
 {
   DateTime now = rtc.now();
   String hora = "";
@@ -99,7 +99,7 @@ void setup()
   // Setting RTC time
   //rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
 
-  Serial.println(getData());
+  Serial.println(getDateTime());
 
   //First free file, write into
   fileName += fileCount;
@@ -141,6 +141,49 @@ void loop()
   }
 }
 
+
+ /****f* Arduino_Sensors_Sketch/writeDataToSD
+  *  NAME
+  *    writeDataToSD
+  *  SYNOPSIS
+  *    writeDataToSD( int sensor1, ... )
+  *  FUNCTION
+  *    When the sensor read a value and whant to save to any destination, we use this function to save that to 
+  *    persisntent file on SD Card.
+  *  INPUTS
+  *    sensor1    - Readed value of sensor 1.
+  *  RESULT
+  *    Write the input values to SD Card on fileName.txt with current DateTime.
+  ******
+  */
+
+void writeDataToSD(int sensor1)
+{
+    // Writting results to file
+    myFile = SD.open(fileName, FILE_WRITE);
+
+    // if the file opened okay, write to it:
+    if (myFile)
+    {
+      if (debug)
+        Serial.println("Writing to: " + fileName);
+
+      myFile.print(getDateTime());
+      myFile.print('#');
+      myFile.print("sensor_1:");
+      myFile.println(sensor1);
+      // close the file:
+      myFile.close();
+      if (debug)
+        Serial.println("Writting SD done.");
+    }
+    else
+    {
+      // if the file didn't open, print an error:
+      Serial.println("Error opening: " + fileName);
+    }
+}
+
 // this method makes a HTTP connection to the server:
 void httpRequest()
 {
@@ -165,29 +208,7 @@ void httpRequest()
     client.println("Connection: close");
     client.println();
 
-    // Writting results to file
-    myFile = SD.open(fileName, FILE_WRITE);
-
-    // if the file opened okay, write to it:
-    if (myFile)
-    {
-      if (debug)
-        Serial.println("Writing to: " + fileName);
-
-      myFile.print(getData());
-      myFile.print('#');
-      myFile.print("sensor_1:");
-      myFile.println(sensorReading);
-      // close the file:
-      myFile.close();
-      if (debug)
-        Serial.println("Writting SD done.");
-    }
-    else
-    {
-      // if the file didn't open, print an error:
-      Serial.println("Error opening test.txt");
-    }
+    writeDataToSD(sensorReading);
 
     // note the time that the connection was made:
     lastConnectionTime = millis();
