@@ -24,6 +24,8 @@ String fileName = "";
 // Declaramos un RTC DS3231
 RTC_DS3231 rtc;
 
+int id_arduino = 1;
+
 // assign a MAC address for the ethernet controller.
 // fill in your address here:
 byte mac[] = {
@@ -117,6 +119,9 @@ void setup()
   delay(2000);
   // start the Ethernet connection using a fixed IP address and DNS server:
   Ethernet.begin(mac, ip, myDns, gateway, subnet);
+  // DHCP IP ( For automatic IP )
+  //Ethernet.begin(mac);
+  
   // print the Ethernet board/shield's IP address:
   Serial.print("My IP address: ");
   Serial.println(Ethernet.localIP());
@@ -198,8 +203,10 @@ void httpRequest()
     // send the HTTP GET request:
     int sensorReading = analogRead(0);
 
-    String cadena = "GET /afegir.php?value=";
+    String cadena = "GET /afegir.php?temp1=";
     cadena += sensorReading;
+    cadena += "&idarduino=";
+    cadena += id_arduino;
     cadena += " HTTP/1.1";
     client.println(cadena);
 
