@@ -162,7 +162,7 @@ void loop()
   ******
   */
 
-void writeDataToSD(int sensor1)
+void writeDataToSD(int sensor1, int sensor2, int sensor3, int sensor4, int sensor5)
 {
     // Writting results to file
     myFile = SD.open(fileName, FILE_WRITE);
@@ -174,9 +174,27 @@ void writeDataToSD(int sensor1)
         Serial.println("Writing to: " + fileName);
 
       myFile.print(getDateTime());
+      //Sensor 1
       myFile.print('#');
       myFile.print("sensor_1:");
       myFile.println(sensor1);
+      //Sensor 2
+      myFile.print('#');
+      myFile.print("sensor_2:");
+      myFile.println(sensor2);
+      //Sensor 3
+      myFile.print('#');
+      myFile.print("sensor_3:");
+      myFile.println(sensor3);
+      //Sensor 4
+      myFile.print('#');
+      myFile.print("sensor_4:");
+      myFile.println(sensor4);
+      //Sensor 5
+      myFile.print('#');
+      myFile.print("sensor_5:");
+      myFile.println(sensor5);
+      
       // close the file:
       myFile.close();
       if (debug)
@@ -189,6 +207,26 @@ void writeDataToSD(int sensor1)
     }
 }
 
+int lecturaTemperatura1(){
+  return analogRead(0);
+}
+
+int lecturaTemperatura2(){
+  return analogRead(0);
+}
+
+int lecturaTemperatura3(){
+  return analogRead(0);
+}
+
+int lecturaTemperatura4(){
+  return analogRead(0);
+}
+
+int lecturaTemperatura5(){
+  return analogRead(0);
+}
+
 // this method makes a HTTP connection to the server:
 void httpRequest()
 {
@@ -196,15 +234,31 @@ void httpRequest()
   // This will free the socket on the WiFi shield
   client.stop();
 
+  //Read values before send to server
+
+  int tempSensor1 = lecturaTemperatura1();
+  int tempSensor2 = lecturaTemperatura2();
+  int tempSensor3 = lecturaTemperatura3();
+  int tempSensor4 = lecturaTemperatura4();
+  int tempSensor5 = lecturaTemperatura5();
+
   // if there's a successful connection:
   if (client.connect(server, 80))
   {
     Serial.println("connecting...");
     // send the HTTP GET request:
-    int sensorReading = analogRead(0);
-
+    
     String cadena = "GET /afegir.php?temp1=";
-    cadena += sensorReading;
+    cadena += tempSensor1;
+    cadena += "&temp2=";
+    cadena += tempSensor2;
+    cadena += "&temp3=";
+    cadena += tempSensor3;
+    cadena += "&temp4=";
+    cadena += tempSensor4;
+    cadena += "&temp5=";
+    cadena += tempSensor5;
+    // Append our ID Arduino
     cadena += "&idarduino=";
     cadena += id_arduino;
     cadena += " HTTP/1.1";
@@ -215,7 +269,7 @@ void httpRequest()
     client.println("Connection: close");
     client.println();
 
-    writeDataToSD(sensorReading);
+    writeDataToSD(tempSensor1, tempSensor2, tempSensor3, tempSensor4, tempSensor5);
 
     // note the time that the connection was made:
     lastConnectionTime = millis();
