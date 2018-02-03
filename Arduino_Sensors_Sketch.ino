@@ -15,10 +15,19 @@
 #include <Wire.h>
 #include <DHT.h>
 
+#include <DallasTemperature.h>
+
 #define DHTTYPE DHT22
 
 const int DHT1_Pin = 5;
 const int DHT2_Pin = 6;
+
+// Pin donde se conecta el bus 1-Wire
+const int pinDatosDQ = 9;
+ 
+// Instancia a las clases OneWire y DallasTemperature
+OneWire oneWireObjeto(pinDatosDQ);
+DallasTemperature sensorDS18B20(&oneWireObjeto);
 
 
 // Debug mode for verbose info on serial monitor
@@ -111,6 +120,11 @@ void setup()
   {
     ; // wait for serial port to connect. Needed for native USB port only
   }
+
+  // Initialize DS18B20 sensors
+  if(debug)
+    Serial.println("Initializing DS18B20 BUS...");
+  sensorDS18B20.begin(); 
 
   // Initialize DHT sensors
   if(debug)
@@ -248,24 +262,8 @@ void writeDataToSD(int sensor1, int sensor2, int sensor3, int sensor4, int senso
     }
 }
 
-int lecturaTemperatura1(){
-  return analogRead(0);
-}
-
-int lecturaTemperatura2(){
-  return analogRead(0);
-}
-
-int lecturaTemperatura3(){
-  return analogRead(0);
-}
-
-int lecturaTemperatura4(){
-  return analogRead(0);
-}
-
-int lecturaTemperatura5(){
-  return analogRead(0);
+float lecturaTemperatura(int posicio){
+  return sensorDS18B20.getTempCByIndex(posicio);
 }
 
 float dht1_temp(){
@@ -293,12 +291,13 @@ void httpRequest()
   client.stop();
 
   //Read values before send to server
-
-  int tempSensor1 = lecturaTemperatura1();
-  int tempSensor2 = lecturaTemperatura2();
-  int tempSensor3 = lecturaTemperatura3();
-  int tempSensor4 = lecturaTemperatura4();
-  int tempSensor5 = lecturaTemperatura5();
+  // Requests temperatures from oneWire Bus
+  sensorDS18B20.requestTemperatures();
+  float tempSensor1 = lecturaTemperatura(0);
+  float tempSensor2 = lecturaTemperatura(1);
+  float tempSensor3 = lecturaTemperatura(2);
+  float tempSensor4 = lecturaTemperatura(3);
+  float tempSensor5 = lecturaTemperatura(4);
 
   // if there's a successful connection:
   if (client.connect(server, 80))
