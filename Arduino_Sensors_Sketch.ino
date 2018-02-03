@@ -3,9 +3,14 @@
  * 
  * Autor: Fran Romero https://github.com/yatan
  * 
- * Based on ethernet web client sketch:
- * Repeating Web client
- * http://www.arduino.cc/en/Tutorial/WebClientRepeating
+ * Based on: 
+ * Ethernet web client sketch:
+ *  Repeating Web client
+ *  http://www.arduino.cc/en/Tutorial/WebClientRepeating
+ *  
+ * DS18B20 sensor de temperatura para líquidos con Arduino:
+ *  https://programarfacil.com/blog/arduino-blog/ds18b20-sensor-temperatura-arduino/
+ * 
  */
 
 #include <SD.h>
@@ -291,13 +296,18 @@ void httpRequest()
   client.stop();
 
   //Read values before send to server
-  // Requests temperatures from oneWire Bus
+  
+  // Requests aqua temperatures from oneWire Bus
   sensorDS18B20.requestTemperatures();
   float tempSensor1 = lecturaTemperatura(0);
   float tempSensor2 = lecturaTemperatura(1);
   float tempSensor3 = lecturaTemperatura(2);
   float tempSensor4 = lecturaTemperatura(3);
   float tempSensor5 = lecturaTemperatura(4);
+
+  // Request  Ambient temperature
+  float temp_ambient1 = dht1_temp();
+  float temp_ambient2 = dht2_temp();
 
   // if there's a successful connection:
   if (client.connect(server, 80))
@@ -315,6 +325,11 @@ void httpRequest()
     cadena += tempSensor4;
     cadena += "&temp5=";
     cadena += tempSensor5;
+    // Append Ambient temperatures
+    cadena += "&ta1=";
+    cadena += temp_ambient1;
+    cadena += "&ta2=";
+    cadena += temp_ambient2;    
     // Append our ID Arduino
     cadena += "&idarduino=";
     cadena += id_arduino;
