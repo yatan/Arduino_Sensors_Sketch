@@ -222,7 +222,7 @@ void loop()
   ******
   */
 
-void writeDataToSD(int sensor1, int sensor2, int sensor3, int sensor4, int sensor5)
+void writeDataToSD(float sensor1, float sensor2, float sensor3, float sensor4, float sensor5, float ambient1, float ambient2)
 {
     // Writting results to file
     myFile = SD.open(fileName, FILE_WRITE);
@@ -234,26 +234,34 @@ void writeDataToSD(int sensor1, int sensor2, int sensor3, int sensor4, int senso
         Serial.println("Writing to: " + fileName);
 
       myFile.print(getDateTime());
-      //Sensor 1
+      //Sensor Temperatura 1
       myFile.print('#');
       myFile.print("sensor_1:");
       myFile.print(sensor1);
-      //Sensor 2
+      //Sensor Temperatura 2
       myFile.print('#');
       myFile.print("sensor_2:");
       myFile.print(sensor2);
-      //Sensor 3
+      //Sensor Temperatura 3
       myFile.print('#');
       myFile.print("sensor_3:");
       myFile.print(sensor3);
-      //Sensor 4
+      //Sensor Temperatura 4
       myFile.print('#');
       myFile.print("sensor_4:");
       myFile.print(sensor4);
-      //Sensor 5
+      //Sensor Temperatura 5
       myFile.print('#');
       myFile.print("sensor_5:");
-      myFile.println(sensor5);
+      myFile.print(sensor5);
+      //Sensor Temperatura Ambient 1
+      myFile.print('#');
+      myFile.print("ambient_1:");
+      myFile.print(ambient1);
+      //Sensor Temperatura Ambient 2
+      myFile.print('#');
+      myFile.print("ambient_2:");
+      myFile.println(ambient2);      
       
       // close the file:
       myFile.close();
@@ -341,7 +349,7 @@ void httpRequest()
     client.println("Connection: close");
     client.println();
 
-    writeDataToSD(tempSensor1, tempSensor2, tempSensor3, tempSensor4, tempSensor5);
+    writeDataToSD(tempSensor1, tempSensor2, tempSensor3, tempSensor4, tempSensor5, temp_ambient1, temp_ambient2);
 
     // note the time that the connection was made:
     lastConnectionTime = millis();
