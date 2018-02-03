@@ -14,43 +14,63 @@
 #include "RTClib.h"
 #include <Wire.h>
 
+
+// Debug mode for verbose info on serial monitor
 boolean debug = false;
 
-// File handler
-File myFile;
-int fileCount = 0;
-String fileName = "";
+/*****
 
-// Declaramos un RTC DS3231
-RTC_DS3231 rtc;
+AUTHENTICATION ARDUINO
+
+*****/
 
 int id_arduino = 1;
 
-// assign a MAC address for the ethernet controller.
-// fill in your address here:
+/****
+
+NETWORK SETTINGS 
+
+****/
+
+// Server connect for sending data
+char server[] = "sensors.openspirulina.com";
+
+// assign a MAC address for the ethernet controller:
 byte mac[] = {
     0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED};
 // fill in an available IP address on your network here,
 // for manual configuration:
 IPAddress ip(192, 168, 137, 177);
-
 // the router's gateway address:
 IPAddress gateway(192, 168, 137, 1);
-
 // the subnet:
 IPAddress subnet(255, 255, 255, 0);
-
 // fill in your Domain Name Server address here:
 IPAddress myDns(8, 8, 8, 8);
 
-// initialize the library instance:
+/*****
+
+TIME INTERVAL
+
+******/
+
+unsigned long lastConnectionTime = 0;               // last time you connected to the server, in milliseconds
+const unsigned long postingInterval = 10L * 1000L;  // delay between updates, in milliseconds
+                                                    // the "L" is needed to use long type numbers
+
+
+/*****
+Global variables for internal use
+ *****/
+ 
+// File handler
+File myFile;
+int fileCount = 0;
+String fileName = "";
+// RTC DS3231
+RTC_DS3231 rtc;
+// Initialize the network library instance:
 EthernetClient client;
-
-char server[] = "sensors.openspirulina.com";
-
-unsigned long lastConnectionTime = 0;              // last time you connected to the server, in milliseconds
-const unsigned long postingInterval = 10L * 1000L; // delay between updates, in milliseconds
-// the "L" is needed to use long type numbers
 
 String getDateTime()
 {
@@ -177,19 +197,19 @@ void writeDataToSD(int sensor1, int sensor2, int sensor3, int sensor4, int senso
       //Sensor 1
       myFile.print('#');
       myFile.print("sensor_1:");
-      myFile.println(sensor1);
+      myFile.print(sensor1);
       //Sensor 2
       myFile.print('#');
       myFile.print("sensor_2:");
-      myFile.println(sensor2);
+      myFile.print(sensor2);
       //Sensor 3
       myFile.print('#');
       myFile.print("sensor_3:");
-      myFile.println(sensor3);
+      myFile.print(sensor3);
       //Sensor 4
       myFile.print('#');
       myFile.print("sensor_4:");
-      myFile.println(sensor4);
+      myFile.print(sensor4);
       //Sensor 5
       myFile.print('#');
       myFile.print("sensor_5:");
