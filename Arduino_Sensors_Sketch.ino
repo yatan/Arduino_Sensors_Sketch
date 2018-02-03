@@ -13,6 +13,12 @@
 #include <Ethernet.h>
 #include "RTClib.h"
 #include <Wire.h>
+#include <DHT.h>
+
+#define DHTTYPE DHT22
+
+const int DHT1_Pin = 5;
+const int DHT2_Pin = 6;
 
 
 // Debug mode for verbose info on serial monitor
@@ -24,7 +30,7 @@ AUTHENTICATION ARDUINO
 
 *****/
 
-int id_arduino = 1;
+const int id_arduino = 1;
 
 /****
 
@@ -71,6 +77,11 @@ String fileName = "";
 RTC_DS3231 rtc;
 // Initialize the network library instance:
 EthernetClient client;
+// DHT Temp/Humity
+DHT dht1(DHT1_Pin, DHTTYPE);
+DHT dht2(DHT2_Pin, DHTTYPE);
+
+
 
 String getDateTime()
 {
@@ -101,6 +112,16 @@ void setup()
     ; // wait for serial port to connect. Needed for native USB port only
   }
 
+  // Initialize DHT sensors
+  if(debug)
+    Serial.println("Initializing DHT Sensor 1...");
+  dht1.begin();
+  
+  if(debug)
+    Serial.println("Initializing DHT Sensor 2...");
+  dht2.begin();
+
+  // Initialize SD Card
   Serial.println("Initializing SD card...");
 
   if (!SD.begin(4))
@@ -246,6 +267,23 @@ int lecturaTemperatura4(){
 int lecturaTemperatura5(){
   return analogRead(0);
 }
+
+float dht1_temp(){
+  return dht1.readTemperature();
+}
+
+float dht1_humidity(){
+  return dht1.readHumidity();
+}
+
+float dht2_temp(){
+  return dht2.readTemperature();
+}
+
+float dht2_humidity(){
+  return dht2.readHumidity();
+}
+
 
 // this method makes a HTTP connection to the server:
 void httpRequest()
