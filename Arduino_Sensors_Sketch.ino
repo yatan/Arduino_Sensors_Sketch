@@ -11,6 +11,8 @@
  * DS18B20 sensor de temperatura para líquidos con Arduino:
  *  https://programarfacil.com/blog/arduino-blog/ds18b20-sensor-temperatura-arduino/
  * 
+ * pH
+ *  http://scidle.com/es/como-usar-un-sensor-de-ph-con-arduino/
  */
 
 #include <SD.h>
@@ -22,13 +24,14 @@
 
 #include <DallasTemperature.h>
 
-#define DHTTYPE DHT22
+#define DHTTYPE DHT11
 
-const int DHT1_Pin = 5;
-const int DHT2_Pin = 6;
+// Pins conexion DHT22
+const int DHT1_Pin = 30;
+const int DHT2_Pin = 40;
 
 // Pin donde se conecta el bus 1-Wire
-const int pinDatosDQ = 9;
+const int pinDatosDQ = 35;
  
 // Instancia a las clases OneWire y DallasTemperature
 OneWire oneWireObjeto(pinDatosDQ);
@@ -36,7 +39,7 @@ DallasTemperature sensorDS18B20(&oneWireObjeto);
 
 
 // Debug mode for verbose info on serial monitor
-boolean debug = false;
+boolean debug = true;
 
 /*****
 
@@ -126,29 +129,18 @@ void setup()
     ; // wait for serial port to connect. Needed for native USB port only
   }
 
-  // Initialize DS18B20 sensors
-  if(debug)
-    Serial.println("Initializing DS18B20 BUS...");
-  sensorDS18B20.begin(); 
-
-  // Initialize DHT sensors
-  if(debug)
-    Serial.println("Initializing DHT Sensor 1...");
-  dht1.begin();
-  
-  if(debug)
-    Serial.println("Initializing DHT Sensor 2...");
-  dht2.begin();
-
   // Initialize SD Card
   Serial.println("Initializing SD card...");
 
   if (!SD.begin(4))
   {
     Serial.println("Initialization SD failed!");
-    return;
+    //return;
   }
-  Serial.println("Initialization SD done.");
+  else
+  {
+    Serial.println("Initialization SD done.");
+  }
 
   // Comprobamos si tenemos el RTC conectado
   if (!rtc.begin())
@@ -174,6 +166,26 @@ void setup()
     fileName += ".txt";
   }
   Serial.println("Writing in file: " + fileName);
+
+
+  // Initialize DS18B20 sensors
+  if(debug)
+    Serial.println("Initializing DS18B20 BUS...");
+  sensorDS18B20.begin();
+
+
+  // Initialize DHT sensors
+  if(debug)
+    Serial.println("Initializing DHT Sensor 1...");
+  dht1.begin();
+  //Serial.println("Fallo DHT_1");
+  
+  if(debug)
+    Serial.println("Initializing DHT Sensor 2...");
+  dht2.begin();
+  //Serial.println("Fallo DHT_2");
+
+
 
   // give the ethernet module time to boot up:
   delay(2000);
@@ -317,6 +329,8 @@ void httpRequest()
   float temp_ambient1 = dht1_temp();
   float temp_ambient2 = dht2_temp();
 
+  temp_ambient2 = 0;
+
   // if there's a successful connection:
   if (client.connect(server, 80))
   {
@@ -342,8 +356,13 @@ void httpRequest()
     cadena += "&idarduino=";
     cadena += id_arduino;
     cadena += " HTTP/1.1";
-    client.println(cadena);
 
+    if(debug)
+      Serial.println(cadena);
+    
+    // Send string to internet  
+    client.println(cadena);
+    
     client.println("Host: sensors.openspirulina.com");
     client.println("User-Agent: arduino-ethernet-1");
     client.println("Connection: close");
@@ -357,6 +376,6 @@ void httpRequest()
   else
   {
     // if you couldn't make a connection:
-    Serial.println("connection failed");
+    Serial.println("Connection Failed");
   }
 }
