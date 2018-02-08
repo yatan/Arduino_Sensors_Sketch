@@ -78,7 +78,7 @@ TIME INTERVAL
 ******/
 
 unsigned long lastConnectionTime = 0;               // last time you connected to the server, in milliseconds
-const unsigned long postingInterval = 10L * 1000L;  // delay between updates, in milliseconds
+const unsigned long postingInterval = 30L * 1000L;  // delay between updates, in milliseconds
                                                     // the "L" is needed to use long type numbers
 
 
