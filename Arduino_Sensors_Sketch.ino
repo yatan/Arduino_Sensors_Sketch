@@ -37,6 +37,11 @@ const int DHT2_Pin = 40;
 #define LDR_sensor3_pin A2
 #define LDR_sensor4_pin A3
 
+// Pins for LDR laser 1 to 3 receivers
+#define laser1_sensor_pin A4
+#define laser2_sensor_pin A5
+#define laser3_sensor_pin A6
+
 // Pin donde se conecta el bus 1-Wire
 const int pinDatosDQ = 35;
  
@@ -294,6 +299,18 @@ void writeDataToSD(float sensor1, float sensor2, float sensor3, float sensor4, f
     }
 }
 
+int laser1(){
+  return analogRead(laser1_sensor_pin);
+}
+
+int laser2(){
+  return analogRead(laser2_sensor_pin);
+}
+
+int laser3(){
+  return analogRead(laser3_sensor_pin);
+}
+
 int ldr1_lux(){
   return analogRead(LDR_sensor1_pin);
 }
@@ -360,6 +377,11 @@ void httpRequest()
   int lux_sensor3 = ldr3_lux();
   int lux_sensor4 = ldr4_lux();
 
+  // Read LDR Laser Sensors
+  int laser_sensor1 = laser1();
+  int laser_sensor2 = laser2();
+  int laser_sensor3 = laser3();
+
   // if there's a successful connection:
   if (client.connect(server, 80))
   {
@@ -390,6 +412,13 @@ void httpRequest()
     cadena += lux_sensor3;
     cadena += "&ldr4=";
     cadena += lux_sensor4;
+    // Append LDR Laser Sensors
+    cadena += "&laser1=";
+    cadena += laser_sensor1;    
+    cadena += "&laser2=";
+    cadena += laser_sensor2;  
+    cadena += "&laser3=";
+    cadena += laser_sensor3;  
     // Append our ID Arduino
     cadena += "&idarduino=";
     cadena += id_arduino;
