@@ -24,11 +24,18 @@
 
 #include <DallasTemperature.h>
 
+// Define DHT Sensor Type DHT11 / DHT21 / DHT22
 #define DHTTYPE DHT11
 
 // Pins conexion DHT22
 const int DHT1_Pin = 30;
 const int DHT2_Pin = 40;
+
+// Pins for LDR 1 to 4 sensors
+#define LDR_sensor1_pin A0
+#define LDR_sensor2_pin A1
+#define LDR_sensor3_pin A2
+#define LDR_sensor4_pin A3
 
 // Pin donde se conecta el bus 1-Wire
 const int pinDatosDQ = 35;
@@ -287,6 +294,22 @@ void writeDataToSD(float sensor1, float sensor2, float sensor3, float sensor4, f
     }
 }
 
+int ldr1_lux(){
+  return analogRead(LDR_sensor1_pin);
+}
+
+int ldr2_lux(){
+  return analogRead(LDR_sensor2_pin);
+}
+
+int ldr3_lux(){
+  return analogRead(LDR_sensor3_pin);
+}
+
+int ldr4_lux(){
+  return analogRead(LDR_sensor4_pin);
+}
+
 float lecturaTemperatura(int posicio){
   return sensorDS18B20.getTempCByIndex(posicio);
 }
@@ -328,8 +351,14 @@ void httpRequest()
   // Request  Ambient temperature
   float temp_ambient1 = dht1_temp();
   float temp_ambient2 = dht2_temp();
-
+  // ! Borrar la seguent linea, ja que dona error si no hi ha sensor connectat !
   temp_ambient2 = 0;
+
+  // Read Lux LDR Sensors
+  int lux_sensor1 = ldr1_lux();
+  int lux_sensor2 = ldr2_lux();
+  int lux_sensor3 = ldr3_lux();
+  int lux_sensor4 = ldr4_lux();
 
   // if there's a successful connection:
   if (client.connect(server, 80))
@@ -351,7 +380,16 @@ void httpRequest()
     cadena += "&ta1=";
     cadena += temp_ambient1;
     cadena += "&ta2=";
-    cadena += temp_ambient2;    
+    cadena += temp_ambient2; 
+    // Append LDR sensors
+    cadena += "&ldr1=";
+    cadena += lux_sensor1;
+    cadena += "&ldr2=";
+    cadena += lux_sensor2;
+    cadena += "&ldr3=";
+    cadena += lux_sensor3;
+    cadena += "&ldr4=";
+    cadena += lux_sensor4;
     // Append our ID Arduino
     cadena += "&idarduino=";
     cadena += id_arduino;
