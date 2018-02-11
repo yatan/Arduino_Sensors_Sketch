@@ -32,15 +32,21 @@ const int DHT1_Pin = 30;
 const int DHT2_Pin = 40;
 
 // Pins for LDR 1 to 4 sensors
-#define LDR_sensor1_pin A0
-#define LDR_sensor2_pin A1
-#define LDR_sensor3_pin A2
-#define LDR_sensor4_pin A3
+#define LDR_sensor1_pin A3
+#define LDR_sensor2_pin A4
+#define LDR_sensor3_pin A5
+#define LDR_sensor4_pin A6
 
 // Pins for LDR laser 1 to 3 receivers
-#define laser1_sensor_pin A4
-#define laser2_sensor_pin A5
-#define laser3_sensor_pin A6
+#define laser1_sensor_pin A0
+#define laser2_sensor_pin A1
+#define laser3_sensor_pin A2
+
+// Pins per connectar els emisors de llum laser
+
+#define laser1_pin 44
+#define laser2_pin 45
+#define laser3_pin 42
 
 // Pin donde se conecta el bus 1-Wire
 const int pinDatosDQ = 35;
@@ -134,6 +140,11 @@ String getDateTime()
 
 void setup()
 {
+  // Establint modo output per als lasers
+  pinMode(laser1_pin, OUTPUT);
+  pinMode(laser2_pin, OUTPUT);
+  pinMode(laser3_pin, OUTPUT);
+  
   // start serial port:
   Serial.begin(9600);
   while (!Serial)
@@ -300,15 +311,54 @@ void writeDataToSD(float sensor1, float sensor2, float sensor3, float sensor4, f
 }
 
 int laser1(){
-  return analogRead(laser1_sensor_pin);
+  // Llegim valors amb el laser tancat
+  int LDRRead_low = analogRead(laser1_sensor_pin);
+  delay(500);
+  // Encenem laser  
+  digitalWrite(laser1_pin, HIGH);
+  // Llegim valors amb el laser obert
+  int LDRRead_high = analogRead(laser1_sensor_pin);
+  delay(500);
+  // Tanquem els lasers
+  digitalWrite(laser1_pin, LOW);
+  // Calculem valor mitja entre els 2 valors.
+  // Aqui aplicar el calcul necessari
+  int mean = ( LDRRead_low + LDRRead_high ) / 2;
+  return mean;
 }
 
 int laser2(){
-  return analogRead(laser2_sensor_pin);
+  // Llegim valors amb el laser tancat
+  int LDRRead_low = analogRead(laser2_sensor_pin);
+  delay(500);
+  // Encenem laser
+  digitalWrite(laser2_pin, HIGH);
+  // Llegim valors amb el laser obert
+  int LDRRead_high = analogRead(laser2_sensor_pin);
+  delay(500);
+  // Tanquem els lasers
+  digitalWrite(laser2_pin, LOW);
+  // Calculem valor mitja entre els 2 valors.
+  // Aqui aplicar el calcul necessari
+  int mean = ( LDRRead_low + LDRRead_high ) / 2;
+  return mean;
 }
 
 int laser3(){
-  return analogRead(laser3_sensor_pin);
+  // Llegim valors amb el laser tancat
+  int LDRRead_low = analogRead(laser3_sensor_pin);
+  delay(500);
+  // Encenem laser
+  digitalWrite(laser3_pin, HIGH);
+  // Llegim valors amb el laser obert
+  int LDRRead_high = analogRead(laser3_sensor_pin);
+  delay(500);
+  // Tanquem els lasers
+  digitalWrite(laser3_pin, LOW);
+  // Calculem valor mitja entre els 2 valors.
+  // Aqui aplicar el calcul necessari
+  int mean = ( LDRRead_low + LDRRead_high ) / 2;
+  return mean;
 }
 
 int ldr1_lux(){
