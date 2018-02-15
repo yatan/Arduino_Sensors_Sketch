@@ -173,7 +173,7 @@ void setup()
       ;
   }
 
-  // Setting RTC time
+  // Setting RTC time for first time programing RTC
   //rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
 
   Serial.println(getDateTime());
