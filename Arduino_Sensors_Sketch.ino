@@ -14,7 +14,18 @@
  * pH
  *  http://scidle.com/es/como-usar-un-sensor-de-ph-con-arduino/
  * 
- * 
+ *Scheme program
+ *
+ *  get_metheo_data
+ *  get_culture_data
+ *  get_OD_data   //OD optical density: spirulina biomass concentration
+ *  onoff_agitation
+ *  onoff_ventilation
+ *  onoffrefrigeraton
+ *  alarm_water_level
+ *  data_to_server
+ *  data_to_SD
+ *
  */
 
 #include <SD.h>
