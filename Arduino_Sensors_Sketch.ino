@@ -298,6 +298,11 @@ void get_OD_data()
   
 }
 
+void onoff_agitation()
+{
+
+}
+
 
 // this method makes a HTTP connection to the server:
 void data_to_server()
@@ -569,51 +574,51 @@ void loop()
   }
 
 
-//Function sequence
-     
-if (millis()- last_get_metheo_data > interval_get_metheo_data)
-{
-    get_metheo_data();
-    last_get_metheo_data = millis();
-}
+  //Function sequence
+      
+  if (millis()- last_get_metheo_data > interval_get_metheo_data)
+  {
+      get_metheo_data();
+      last_get_metheo_data = millis();
+  }
 
-if (millis()-last_get_culture_data > interval_get_culture_data)
-{
-  get_culture_data();
-  last_get_culture_data = millis();
-}
+  if (millis()-last_get_culture_data > interval_get_culture_data)
+  {
+    get_culture_data();
+    last_get_culture_data = millis();
+  }
 
-if (millis()-last_get_OD_data > interval_get_culture_data)
-{
-  get_OD_data();
-  last_get_OD_data = millis();
-}
+  if (millis()-last_get_OD_data > interval_get_culture_data)
+  {
+    get_OD_data();
+    last_get_OD_data = millis();
+  }
 
-if (millis()-last_data_to_server > interval_data_to_server)
-{
-  data_to_server();
-  last_data_to_server = millis(); 
-}
+  if (millis()-last_data_to_server > interval_data_to_server)
+  {
+    data_to_server();
+    last_data_to_server = millis(); 
+  }
 
-if (millis()-last_data_to_SD > interval_data_to_SD)
-{
-  data_to_SD(tempSensor1, tempSensor2, tempSensor3, tempSensor4, tempSensor5, temp_ambient1, temp_ambient2);
+  if (millis()-last_data_to_SD > interval_data_to_SD)
+  {
+    //data_to_SD(tempSensor1, tempSensor2, tempSensor3, tempSensor4, tempSensor5, temp_ambient1, temp_ambient2);
 
-  last_data_to_SD = millis(); 
-}
+    last_data_to_SD = millis(); 
+  }
 
 
-if (millis()-last_onoff_agitation > interval_onoff_agitation)
-{
+  if (millis()-last_onoff_agitation > interval_1_onoff_agitation)
+  {
 
-  onoff_agitation();
-  
-}
+    onoff_agitation();
+    last_onoff_agitation = millis();
+  }
      
       
   //Falta funció de relés, onoff i alarma, dis-me si t'agrada així.
 
-
+}
 
 
 
