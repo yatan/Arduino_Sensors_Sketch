@@ -21,12 +21,16 @@
  *  get_OD_data   //OD optical density: spirulina biomass concentration
  *  onoff_agitation
  *  onoff_ventilation
- *  onoffrefrigeraton
+ *  onoff_refrigeraton
  *  alarm_water_level
  *  data_to_server
  *  data_to_SD
  *
  */
+
+
+
+//Libraries used
 
 #include <SD.h>
 #include <SPI.h>
@@ -34,12 +38,17 @@
 #include "RTClib.h"
 #include <Wire.h>
 #include <DHT.h>
-
 #include <DallasTemperature.h>
 
-// Define DHT Sensor Type DHT11 / DHT21 / DHT22
-#define DHTTYPE DHT11
+// Define DHT Sensor Type DHT11 / DHT21 / DHT22 : per anar bé haurien de ser DHT22 ja que tenen més precisió
+#define DHTTYPE DHT22 
 
+
+
+/****
+ * PINS CONEXION
+ ****/
+ 
 // Pins conexion DHT22
 const int DHT1_Pin = 30;
 const int DHT2_Pin = 40;
@@ -63,7 +72,46 @@ const int DHT2_Pin = 40;
 
 // Pin donde se conecta el bus 1-Wire
 const int pinDatosDQ = 35;
- 
+
+
+/****
+ * TIME INTERVAL VARIABLES
+ ****/
+
+//Time interval to get metheo data
+unsigned long last_get_metheo_data = 0;             
+const unsigned long interval_get_metheo_data = 30L * 1000L;
+
+
+//Time interval to get culture data
+unsigned long last_get_culture_data = 0;             
+const unsigned long interval_get_culture_data = 30L * 1000L;
+
+
+//Time interval to get Optical Density data
+unsigned long last_get_OD_data = 0;             
+const unsigned long interval_get_OD_data = 30L * 1000L;
+
+
+//Time interval to send data to server
+unsigned long last_data_to_server = 0;             
+const unsigned long interval_data_to_server = 30L * 1000L;
+
+
+//Time interval to send data to SD card
+unsigned long last_data_to_SD = 0;             
+const unsigned long interval_data_to_SD = 30L * 1000L;
+
+
+//Time interval to onoff_agitation
+unsigned long last_onoff_agitation = 0;             
+const unsigned long interval_1_onoff_agitation = 30L * 1000L;
+const unsigned long interval_2_onoff_agitation = 60L * 1000L;
+
+
+
+
+
 // Instancia a las clases OneWire y DallasTemperature
 OneWire oneWireObjeto(pinDatosDQ);
 DallasTemperature sensorDS18B20(&oneWireObjeto);
@@ -102,15 +150,8 @@ IPAddress subnet(255, 255, 255, 0);
 // fill in your Domain Name Server address here:
 IPAddress myDns(8, 8, 8, 8);
 
-/*****
+ 
 
-TIME INTERVAL
-
-******/
-
-unsigned long lastConnectionTime = 0;               // last time you connected to the server, in milliseconds
-const unsigned long postingInterval = 30L * 1000L;  // delay between updates, in milliseconds
-                                                    // the "L" is needed to use long type numbers
 
 
 /*****
@@ -129,7 +170,8 @@ EthernetClient client;
 DHT dht1(DHT1_Pin, DHTTYPE);
 DHT dht2(DHT2_Pin, DHTTYPE);
 
-
+/****
+ * Per agafar l'hora, de moment no ho farem anar...
 
 String getDateTime()
 {
@@ -150,6 +192,9 @@ String getDateTime()
 
   return hora;
 }
+
+
+**********/
 
 void setup()
 {
@@ -189,7 +234,7 @@ void setup()
   // Setting RTC time for first time programing RTC
   //rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
 
-  Serial.println(getDateTime());
+ // Serial.println(getDateTime());
 
   //First free file, write into
   fileName += fileCount;
@@ -235,24 +280,123 @@ void setup()
   Serial.println(Ethernet.localIP());
 }
 
-void loop()
-{
-  // if there's incoming data from the net connection.
-  // send it out the serial port.  This is for debugging
-  // purposes only:
-  if (client.available())
-  {
-    char c = client.read();
-    Serial.write(c);
-  }
 
-  // if ten seconds have passed since your last connection,
-  // then connect again and send data:
-  if (millis() - lastConnectionTime > postingInterval)
+void get_metheo_data()
+{
+  
+}
+
+
+void get_culture_data()
+{
+  
+}
+
+
+void get_OD_data()
+{
+  
+}
+
+
+// this method makes a HTTP connection to the server:
+void data_to_server()
+{
+  // close any connection before send a new request.
+  // This will free the socket on the WiFi shield
+  client.stop();
+
+  //Read values before send to server
+  
+  // Requests culture temperatures from oneWire Bus
+  sensorDS18B20.requestTemperatures();
+  float tempSensor1 = lecturaTemperatura(0);
+  float tempSensor2 = lecturaTemperatura(1);
+  float tempSensor3 = lecturaTemperatura(2);
+  float tempSensor4 = lecturaTemperatura(3);
+  float tempSensor5 = lecturaTemperatura(4);
+
+  // Request  Ambient temperature
+  float temp_ambient1 = dht1_temp();
+  float temp_ambient2 = dht2_temp();
+  // ! Borrar la seguent linea, ja que dona error si no hi ha sensor connectat !
+  temp_ambient2 = 0;
+
+  // Read Lux LDR Sensors
+  int lux_sensor1 = ldr1_lux();
+  int lux_sensor2 = ldr2_lux();
+  int lux_sensor3 = ldr3_lux();
+  int lux_sensor4 = ldr4_lux();
+
+  // Read LDR Laser Sensors
+  int laser_sensor1 = laser1();
+  int laser_sensor2 = laser2();
+  int laser_sensor3 = laser3();
+
+  // if there's a successful connection:
+  if (client.connect(server, 80))
   {
-    httpRequest();
+    Serial.println("connecting...");
+    // send the HTTP GET request:
+    
+    String cadena = "GET /afegir.php?temp1=";
+    cadena += tempSensor1;
+    cadena += "&temp2=";
+    cadena += tempSensor2;
+    cadena += "&temp3=";
+    cadena += tempSensor3;
+    cadena += "&temp4=";
+    cadena += tempSensor4;
+    cadena += "&temp5=";
+    cadena += tempSensor5;
+    // Append Ambient temperatures
+    cadena += "&ta1=";
+    cadena += temp_ambient1;
+    cadena += "&ta2=";
+    cadena += temp_ambient2; 
+    // Append LDR sensors
+    cadena += "&ldr1=";
+    cadena += lux_sensor1;
+    cadena += "&ldr2=";
+    cadena += lux_sensor2;
+    cadena += "&ldr3=";
+    cadena += lux_sensor3;
+    cadena += "&ldr4=";
+    cadena += lux_sensor4;
+    // Append LDR Laser Sensors
+    cadena += "&laser1=";
+    cadena += laser_sensor1;    
+    cadena += "&laser2=";
+    cadena += laser_sensor2;  
+    cadena += "&laser3=";
+    cadena += laser_sensor3;  
+    // Append our ID Arduino
+    cadena += "&idarduino=";
+    cadena += id_arduino;
+    cadena += " HTTP/1.1";
+
+    if(debug)
+      Serial.println(cadena);
+    
+    // Send string to internet  
+    client.println(cadena);
+    
+    client.println("Host: sensors.openspirulina.com");
+    client.println("User-Agent: arduino-ethernet-1");
+    client.println("Connection: close");
+    client.println();
+
+
+    // note the time that the connection was made:
+    last_data_to_server = millis();
+  }
+  else
+  {
+    // if you couldn't make a connection:
+    Serial.println("Connection Failed");
   }
 }
+
 
 
  /****f* Arduino_Sensors_Sketch/writeDataToSD
@@ -270,7 +414,7 @@ void loop()
   ******
   */
 
-void writeDataToSD(float sensor1, float sensor2, float sensor3, float sensor4, float sensor5, float ambient1, float ambient2)
+void data_to_SD(float sensor1, float sensor2, float sensor3, float sensor4, float sensor5, float ambient1, float ambient2)
 {
     // Writting results to file
     myFile = SD.open(fileName, FILE_WRITE);
@@ -281,7 +425,7 @@ void writeDataToSD(float sensor1, float sensor2, float sensor3, float sensor4, f
       if (debug)
         Serial.println("Writing to: " + fileName);
 
-      myFile.print(getDateTime());
+   //   myFile.print(getDateTime());
       //Sensor Temperatura 1
       myFile.print('#');
       myFile.print("sensor_1:");
@@ -411,101 +555,72 @@ float dht2_humidity(){
 }
 
 
-// this method makes a HTTP connection to the server:
-void httpRequest()
+
+
+void loop()
 {
-  // close any connection before send a new request.
-  // This will free the socket on the WiFi shield
-  client.stop();
-
-  //Read values before send to server
-  
-  // Requests culture temperatures from oneWire Bus
-  sensorDS18B20.requestTemperatures();
-  float tempSensor1 = lecturaTemperatura(0);
-  float tempSensor2 = lecturaTemperatura(1);
-  float tempSensor3 = lecturaTemperatura(2);
-  float tempSensor4 = lecturaTemperatura(3);
-  float tempSensor5 = lecturaTemperatura(4);
-
-  // Request  Ambient temperature
-  float temp_ambient1 = dht1_temp();
-  float temp_ambient2 = dht2_temp();
-  // ! Borrar la seguent linea, ja que dona error si no hi ha sensor connectat !
-  temp_ambient2 = 0;
-
-  // Read Lux LDR Sensors
-  int lux_sensor1 = ldr1_lux();
-  int lux_sensor2 = ldr2_lux();
-  int lux_sensor3 = ldr3_lux();
-  int lux_sensor4 = ldr4_lux();
-
-  // Read LDR Laser Sensors
-  int laser_sensor1 = laser1();
-  int laser_sensor2 = laser2();
-  int laser_sensor3 = laser3();
-
-  // if there's a successful connection:
-  if (client.connect(server, 80))
+  // if there's incoming data from the net connection.
+  // send it out the serial port.  This is for debugging
+  // purposes only:
+  if (client.available())
   {
-    Serial.println("connecting...");
-    // send the HTTP GET request:
-    
-    String cadena = "GET /afegir.php?temp1=";
-    cadena += tempSensor1;
-    cadena += "&temp2=";
-    cadena += tempSensor2;
-    cadena += "&temp3=";
-    cadena += tempSensor3;
-    cadena += "&temp4=";
-    cadena += tempSensor4;
-    cadena += "&temp5=";
-    cadena += tempSensor5;
-    // Append Ambient temperatures
-    cadena += "&ta1=";
-    cadena += temp_ambient1;
-    cadena += "&ta2=";
-    cadena += temp_ambient2; 
-    // Append LDR sensors
-    cadena += "&ldr1=";
-    cadena += lux_sensor1;
-    cadena += "&ldr2=";
-    cadena += lux_sensor2;
-    cadena += "&ldr3=";
-    cadena += lux_sensor3;
-    cadena += "&ldr4=";
-    cadena += lux_sensor4;
-    // Append LDR Laser Sensors
-    cadena += "&laser1=";
-    cadena += laser_sensor1;    
-    cadena += "&laser2=";
-    cadena += laser_sensor2;  
-    cadena += "&laser3=";
-    cadena += laser_sensor3;  
-    // Append our ID Arduino
-    cadena += "&idarduino=";
-    cadena += id_arduino;
-    cadena += " HTTP/1.1";
-
-    if(debug)
-      Serial.println(cadena);
-    
-    // Send string to internet  
-    client.println(cadena);
-    
-    client.println("Host: sensors.openspirulina.com");
-    client.println("User-Agent: arduino-ethernet-1");
-    client.println("Connection: close");
-    client.println();
-
-    writeDataToSD(tempSensor1, tempSensor2, tempSensor3, tempSensor4, tempSensor5, temp_ambient1, temp_ambient2);
-
-    // note the time that the connection was made:
-    lastConnectionTime = millis();
+    char c = client.read();
+    Serial.write(c);
   }
-  else
-  {
-    // if you couldn't make a connection:
-    Serial.println("Connection Failed");
-  }
+
+
+//Function sequence
+     
+if (millis()- last_get_metheo_data > interval_get_metheo_data)
+{
+    get_metheo_data();
+    last_get_metheo_data = millis();
 }
+
+if (millis()-last_get_culture_data > interval_get_culture_data)
+{
+  get_culture_data();
+  last_get_culture_data = millis();
+}
+
+if (millis()-last_get_OD_data > interval_get_culture_data)
+{
+  get_OD_data();
+  last_get_OD_data = millis();
+}
+
+if (millis()-last_data_to_server > interval_data_to_server)
+{
+  data_to_server();
+  last_data_to_server = millis(); 
+}
+
+if (millis()-last_data_to_SD > interval_data_to_SD)
+{
+  data_to_SD(tempSensor1, tempSensor2, tempSensor3, tempSensor4, tempSensor5, temp_ambient1, temp_ambient2);
+
+  last_data_to_SD = millis(); 
+}
+
+
+if (millis()-last_onoff_agitation > interval_onoff_agitation)
+{
+
+  onoff_agitation();
+  
+}
+     
+      
+  //Falta funció de relés, onoff i alarma, dis-me si t'agrada així.
+
+
+
+
+
+
+
+
+
+
+
+
