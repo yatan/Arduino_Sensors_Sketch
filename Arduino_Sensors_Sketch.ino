@@ -70,6 +70,10 @@ const int DHT2_Pin = 40;
 #define laser2_pin 45
 #define laser3_pin 42
 
+
+//Pin on es conectar el relé ONOFF de l'agitació
+#define agitation_pin 41 //M'he inventat aquest PIN fran...no sé si seria correcte..
+
 // Pin donde se conecta el bus 1-Wire
 const int pinDatosDQ = 35;
 
@@ -111,6 +115,69 @@ const unsigned long interval_2_onoff_agitation = 60L * 1000L;
 
 
 
+
+
+
+
+
+
+
+
+
+
+/****
+ * 
+ * CULTURE VARIABLES
+ *
+ ****/
+
+
+
+/****
+ * 
+ *  GET OD DATA VARAIBLES
+ *
+ ****/
+
+
+int laser_sensor1 = 0; //Valor de la irradiancia, així doncs millor anomenarlo ir, però com que això cambiar-ho s'ha de cambiar a molttsp uestos abans t'ho pregunto. 
+
+//Irradiancia del laser 1
+int ir1 = 0 ;
+int ir10 = 1000;
+
+//Irradiancia del laser 2
+int ir2 = 0 ;
+int ir20 = 1000;
+
+
+//Irradiancia del laser 3
+int ir3 = 0 ;
+int ir30 = 1000;
+
+// Waiting for opening laser
+unsigned long wait_opening_laser = 2000;
+
+
+/****
+ * 
+ * AGITATION VARIABLES
+ *
+ ****/
+
+
+
+//Time agitation is on
+unsigned long t_agitation_on = 0;
+//Time agitation is off
+unsigned long t_agitation_off = 0;
+
+
+
+/***
+ * prendre varies mesures
+ */
+int samples_number = 8;
 
 // Instancia a las clases OneWire y DallasTemperature
 OneWire oneWireObjeto(pinDatosDQ);
@@ -157,6 +224,10 @@ IPAddress myDns(8, 8, 8, 8);
 /*****
 Global variables for internal use
  *****/
+
+
+ int irr = 0; 
+ int irr1 = 0;
  
 // File handler
 File myFile;
@@ -198,10 +269,14 @@ String getDateTime()
 
 void setup()
 {
-  // Establint modo output per als lasers
-  pinMode(laser1_pin, OUTPUT);
-  pinMode(laser2_pin, OUTPUT);
-  pinMode(laser3_pin, OUTPUT);
+   
+    //Establint modo output per als lasers
+ pinMode(laser1_pin, OUTPUT);
+ pinMode(laser2_pin, OUTPUT);
+ pinMode(laser3_pin, OUTPUT);
+    //Establint modo output per als lasers
+ pinMode(agitation_pin, OUTPUT);
+
   
   // start serial port:
   Serial.begin(9600);
@@ -289,14 +364,63 @@ void get_metheo_data()
 
 void get_culture_data()
 {
+
   
 }
+
 
 
 void get_OD_data()
 {
+
+/*Finalment per aquesta funció no cal llegir quan el laser está apagat.
+ * (Només quan será un fotobiorreactor, però això ja farem l'adaptació).
+ * El que necessitem obtindre del cultiu és l'absorbància.
+ *  A=1/L -log10 (I/Io)
+ *    On  L és la distància entre làser en cm (segons disseny 2cm)
+ *        I és la intensitat de llum després de travesar la mostra 
+ *            és a dir laser1_sensor  SI hi la bomba agitació == ON.
+ *        Io és la intensitat de llum com si no hi hagués mostra
+ *            és adir laser1_sensor   SI no hi hagut agitació els últim X minuts, on X depén de cada soca d'espirulina.
+ *            
+ *            Així doncs la funció quedaria: 
+ */
+
+if (agitation_pin = HIGH)
+{
+  if(t_agitation_on + t_needed_agitation_on < millis()) //Asegurar-se que fa una estona que funciona l'agitació
+  {
+    ir1 = laser1();
+    ir2 = laser2();
+    ir3 = laser3();
+   
+    }
+  
+
+
+  }
+else 
+{
+  if(t_agitation_off + t_needed_agitation_on < millis()) //Assegurar-se que fa una estona que NO funciona l'agitació
+ {
+   ir10 = laser1();
+    ir20 = laser2();
+    ir30 = laser3();
+  }
+  
+  }
+last_get_OD_data = millis();
+
+ 
+ // Read LDR Laser Sensors
+  int laser_sensor1 = laser1();
+  int laser_sensor2 = laser2();
+  int laser_sensor3 = laser3();
+
   
 }
+
+
 
 void onoff_agitation()
 {
@@ -333,10 +457,7 @@ void data_to_server()
   int lux_sensor3 = ldr3_lux();
   int lux_sensor4 = ldr4_lux();
 
-  // Read LDR Laser Sensors
-  int laser_sensor1 = laser1();
-  int laser_sensor2 = laser2();
-  int laser_sensor3 = laser3();
+ 
 
   // if there's a successful connection:
   if (client.connect(server, 80))
@@ -431,7 +552,7 @@ void data_to_SD(float sensor1, float sensor2, float sensor3, float sensor4, floa
         Serial.println("Writing to: " + fileName);
 
    //   myFile.print(getDateTime());
-      //Sensor Temperatura 1
+      //Sensor Temperatura 
       myFile.print('#');
       myFile.print("sensor_1:");
       myFile.print(sensor1);
@@ -472,21 +593,28 @@ void data_to_SD(float sensor1, float sensor2, float sensor3, float sensor4, floa
     }
 }
 
-int laser1(){
-  // Llegim valors amb el laser tancat
+int laser1()
+{
+ /* No cal fer-ho això...
+  *  // Llegim valors amb el laser tancat
   int LDRRead_low = analogRead(laser1_sensor_pin);
   delay(500);
+
+  */
+  
   // Encenem laser  
   digitalWrite(laser1_pin, HIGH);
   // Llegim valors amb el laser obert
-  int LDRRead_high = analogRead(laser1_sensor_pin);
-  delay(500);
-  // Tanquem els lasers
-  digitalWrite(laser1_pin, LOW);
-  // Calculem valor mitja entre els 2 valors.
-  // Aqui aplicar el calcul necessari
-  int mean = ( LDRRead_low + LDRRead_high ) / 2;
+  delay(wait_opening_laser);
+  for (int i=0; i<samples_number; i++) //No tinc del tot clar que estigui ben fet, el que vull és que faci 8 lectures.
+  {
+  iir1 = analogRead(laser1_sensor_pin);
+  iir += iir1
+  
+  }
+  int mean = ( iir ) / 8;
   return mean;
+  
 }
 
 int laser2(){
@@ -589,6 +717,7 @@ void loop()
   }
 
   if (millis()-last_get_OD_data > interval_get_culture_data)
+  
   {
     get_OD_data();
     last_get_OD_data = millis();
@@ -616,7 +745,6 @@ void loop()
   }
      
       
-  //Falta funció de relés, onoff i alarma, dis-me si t'agrada així.
 
 }
 
