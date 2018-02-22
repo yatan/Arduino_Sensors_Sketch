@@ -96,6 +96,10 @@ const unsigned long interval_get_culture_data = 30L * 1000L;
 unsigned long last_get_OD_data = 0;             
 const unsigned long interval_get_OD_data = 30L * 1000L;
 
+//Time of agitation on to get Optical Density
+unsigned long t_needed_agitation_on
+unsigned long t_needed_agitation_off
+
 
 //Time interval to send data to server
 unsigned long last_data_to_server = 0;             
