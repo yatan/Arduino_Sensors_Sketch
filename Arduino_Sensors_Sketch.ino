@@ -148,16 +148,16 @@ int laser_sensor1 = 0; //Valor de la irradiancia, així doncs millor anomenarlo 
 
 //Irradiancia del laser 1
 int ir1 = 0 ;
-int ir10 = 1000;
+int ir10 = 1000;  //Aquest valor s'hauria de contrastar un primer cop
 
 //Irradiancia del laser 2
 int ir2 = 0 ;
-int ir20 = 1000;
+int ir20 = 1000; //Aquest valor s'hauria de contrastar un primer cop
 
 
 //Irradiancia del laser 3
 int ir3 = 0 ;
-int ir30 = 1000;
+int ir30 = 1000; //Aquest valor s'hauria de contrastar un primer cop
 
 // Waiting for opening laser
 unsigned long wait_opening_laser = 2000;
@@ -180,7 +180,7 @@ unsigned long t_agitation_off = 0;
 
 /***
  * prendre varies mesures
- */
+ ***/
 int samples_number = 8;
 
 // Instancia a las clases OneWire y DallasTemperature
@@ -614,7 +614,7 @@ int laser1()
   {
   iir1 = analogRead(laser1_sensor_pin);
   iir += iir1
-  
+  delay(500);
   }
   int mean = ( iir ) / 8;
   return mean;
