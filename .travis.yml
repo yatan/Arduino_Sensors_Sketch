@@ -5,7 +5,7 @@ before_install:
    - source <(curl -SLs https://raw.githubusercontent.com/adafruit/travis-ci-arduino/master/install.sh)
 
 install:
-   - arduino --install-boards "arduino:avr:mega"
+   - arduino --board arduino:avr:uno
 
 script:
-   - build_main_platforms
+   - build_platform uno
