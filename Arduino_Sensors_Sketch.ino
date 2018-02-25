@@ -492,17 +492,17 @@ void data_to_server()
   
   // Requests culture temperatures from oneWire Bus
   sensorDS18B20.requestTemperatures();
-   temp1 = lecturaTemperatura(0);
-   temp2 = lecturaTemperatura(1);
-   temp3 = lecturaTemperatura(2);
-   temp4 = lecturaTemperatura(3);
-   temp5 = lecturaTemperatura(4);
+  temp1 = lecturaTemperatura(0);
+  temp2 = lecturaTemperatura(1);
+  temp3 = lecturaTemperatura(2);
+  temp4 = lecturaTemperatura(3);
+  temp5 = lecturaTemperatura(4);
 
   // Request  Ambient temperature
-  float temp_ambient1 = dht1_temp();
-  float temp_ambient2 = dht2_temp();
+  ambient1 = dht1_temp();
+  ambient2 = dht2_temp();
   // ! Borrar la seguent linea, ja que dona error si no hi ha sensor connectat !
-  temp_ambient2 = 0;
+  ambient2 = 0;
 
 
 
@@ -532,9 +532,9 @@ void data_to_server()
     cadena += temp5;
     // Append Ambient temperatures
     cadena += "&ta1=";
-    cadena += temp_ambient1;
+    cadena += ambient1;
     cadena += "&ta2=";
-    cadena += temp_ambient2; 
+    cadena += ambient2; 
   /*
     // Append LDR sensors
     cadena += "&ldr1=";
