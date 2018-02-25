@@ -5,7 +5,7 @@ before_install:
    - source <(curl -SLs https://raw.githubusercontent.com/adafruit/travis-ci-arduino/master/install.sh)
 
 install:
-   - arduino --board arduino:avr:uno
+   - arduino --install-library "Adafruit RTClib" --board arduino:avr:uno
 
 script:
    - build_platform uno
