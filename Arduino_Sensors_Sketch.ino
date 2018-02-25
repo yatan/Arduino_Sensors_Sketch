@@ -368,8 +368,8 @@ void setup()
   //rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
 
  // Serial.println(getDateTime());
-
-  //First free file, write into
+*/
+  // Obtain a free file name for writting to SD
   fileName += fileCount;
   fileName += ".txt";
   while (SD.exists(fileName))
@@ -379,8 +379,9 @@ void setup()
     fileName += fileCount;
     fileName += ".txt";
   }
-  Serial.println("Writing in file: " + fileName);
-*/
+  if(debug)
+    Serial.println("Writing in file: " + fileName);
+
 
   // Initialize DS18B20 Temperature sensors
   if(debug)
