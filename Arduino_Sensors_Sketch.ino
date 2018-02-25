@@ -807,7 +807,8 @@ void loop()
 
   if (millis()-last_data_to_SD > interval_data_to_SD)
   {
-    //data_to_SD(tempSensor1, tempSensor2, tempSensor3, tempSensor4, tempSensor5, temp_ambient1, temp_ambient2);
+    // Write data sensors to SD
+    data_to_SD();
 
     last_data_to_SD = millis(); 
   }
