@@ -446,39 +446,30 @@ void get_OD_data()
  *            Així doncs la funció quedaria: 
  */
 
-if (agitation_pin == HIGH)
-{
-  if(t_agitation_on + t_needed_agitation_on < millis()) //Asegurar-se que fa una estona que funciona l'agitació
+  if (agitation_pin == HIGH)
   {
-    ir1 = laser1();
-    ir2 = laser2();
-    //ir3 = laser3(); Només dos lasers
-    
-    last_get_OD_data = millis();
-
-   
+    if(t_agitation_on + t_needed_agitation_on < millis()) //Asegurar-se que fa una estona que funciona l'agitació
+    {
+      ir1 = laser1();
+      ir2 = laser2();
+      //ir3 = laser3(); Només dos lasers
+      
+      last_get_OD_data = millis();
     }
-  
-
-
   }
-else 
-{
-  if(t_agitation_off + t_needed_agitation_on < millis()) //Assegurar-se que fa una estona que NO funciona l'agitació
- {
-   ir10 = laser1();
-    ir20 = laser2();
-    //ir30 = laser3();
-    
-    last_get_OD_data = millis();
-  }
-  
+  else 
+  {
+    if(t_agitation_off + t_needed_agitation_on < millis()) //Assegurar-se que fa una estona que NO funciona l'agitació
+    {
+      ir10 = laser1();
+      ir20 = laser2();
+      //ir30 = laser3();
+      
+      last_get_OD_data = millis();
+    }
   }
 
 
-
-
-  
 }
 
 
@@ -626,9 +617,10 @@ void data_to_SD()
       if (debug)
         Serial.println("Writing to: " + fileName);
 
-   //   myFile.print(getDateTime());
+      //DateTime from RTC
+      //myFile.print(getDateTime());
       
-     //Temperatures del cultiu 
+      //Temperatures del cultiu 
       //Sensor Temperatura 1
       myFile.print('#');
       myFile.print("sensor_1:");
@@ -686,9 +678,9 @@ int laser1()
   delay(wait_opening_laser);
   for (int i=0; i<samples_number; i++) //No tinc del tot clar que estigui ben fet, el que vull és que faci 8 lectures.
   {
-  iir1 = analogRead(laser1_pin);//Això no es fa així amb el I2C conection...s'ha de fer amb la lliberiria BH1750
-  iir += iir1;
-  delay(500);
+    iir1 = analogRead(laser1_pin);//Això no es fa així amb el I2C conection...s'ha de fer amb la lliberiria BH1750
+    iir += iir1;
+    delay(500);
   }
   digitalWrite(laser1_pin, LOW);
   int mean = ( iir ) / 8;
@@ -703,9 +695,9 @@ int laser2(){
   delay(wait_opening_laser);
   for (int i=0; i<samples_number; i++) //No tinc del tot clar que estigui ben fet, el que vull és que faci 8 lectures.
   {
-  iir1 = analogRead(laser2_pin); //Això no es fa així amb el I2C conection...s'ha de fer amb la lliberiria BH1750
-  iir += iir1;
-  delay(500);
+    iir1 = analogRead(laser2_pin); //Això no es fa així amb el I2C conection...s'ha de fer amb la lliberiria BH1750
+    iir += iir1;
+    delay(500);
   }
   digitalWrite(laser2_pin, LOW);
   int mean = ( iir ) / 8;
