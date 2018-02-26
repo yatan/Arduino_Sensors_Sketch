@@ -281,7 +281,7 @@ File myFile;
 int fileCount = 0;
 String fileName = "";
 // RTC DS3231 (clock sensor)
-RTC_DS3231 rtc;
+//RTC_DS3231 rtc; not needed now
 // Initialize the network library instance:
 EthernetClient client;
 // DHT Temp/Humity
@@ -334,11 +334,19 @@ void setup()
   //start BH1740 light sensor
 
   Wire.begin();
-   if (ir_laser1.begin(BH1750::CONTINUOUS_HIGH_RES_MODE_2)) {
-    Serial.println(F("light BH1750 sensor started"));
+ 
+ if (ir_laser1.begin(BH1750::CONTINUOUS_HIGH_RES_MODE_2)) {
+    Serial.println(F("light BH1750 sensor 1 started"));
   }
   else {
-    Serial.println(F("Error initialising light BH1750"));
+    Serial.println(F("Error initialising light sensor 1 BH1750"));
+  }
+ 
+ if (ir_laser2.begin(BH1750::CONTINUOUS_HIGH_RES_MODE_2)) {
+    Serial.println(F("light BH1750 sensor 2 started"));
+  }
+  else {
+    Serial.println(F("Error initialising light sensor 2 BH1750"));
   }
 
   
