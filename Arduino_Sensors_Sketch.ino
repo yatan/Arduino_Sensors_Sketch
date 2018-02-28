@@ -112,7 +112,7 @@ const unsigned long interval_get_metheo_data = 30L * 1000L;
 
 //Time interval to get culture data
 unsigned long last_get_culture_data = 0;             
-const unsigned long interval_get_culture_data = 30L * 1000L;
+const unsigned long interval_get_culture_data = 0L * 1000L;
 
 
 //Time interval to get Optical Density data
@@ -170,17 +170,17 @@ const unsigned long interval_2_onoff_agitation = 60L * 1000L;
 int laser_sensor1 = 0; //Valor de la irradiancia, així doncs millor anomenarlo ir, però com que això cambiar-ho s'ha de cambiar a molttsp uestos abans t'ho pregunto. 
 
 //Irradiancia del laser 1
-int ir1 = 0 ;
-int ir10 = 500;  //Aquest valor s'hauria de contrastar un primer cop
+float ir1 = 0 ;
+float ir10 = 500;  //Aquest valor s'hauria de contrastar un primer cop
 
 //Irradiancia del laser 2
-int ir2 = 0 ;
-int ir20 = 500; //Aquest valor s'hauria de contrastar un primer cop
+float ir2 = 0 ;
+float ir20 = 500; //Aquest valor s'hauria de contrastar un primer cop
 
 
 //Irradiancia del laser 3
-int ir3 = 0 ;
-int ir30 = 500; //Aquest valor s'hauria de contrastar un primer cop
+float ir3 = 0 ;
+float ir30 = 500; //Aquest valor s'hauria de contrastar un primer cop
 
 // Waiting for opening laser
 unsigned long wait_opening_laser = 2000;
@@ -260,7 +260,7 @@ Global variables for internal use
  *****/
 
 //Irradiancia for get_OD_function
- int iir = 0; 
+ unsigned long iir = 0L; 
  int iir1 = 0;
 
 //Temperature
@@ -453,17 +453,19 @@ void get_OD_data()
  *            
  *            Així doncs la funció quedaria: 
  */
-
-  if (agitation_pin == HIGH)
-  {
+  //if (agitation_pin == HIGH)
+  //{
     if(t_agitation_on + t_needed_agitation_on < millis()) //Asegurar-se que fa una estona que funciona l'agitació
     {
       ir1 = laser1();
       ir2 = laser2();
+      Serial.print("passo per get_OD i el valor de ir1 es ");
+      Serial.println(ir2);
+      
       //ir3 = laser3(); Només dos lasers
       
       last_get_OD_data = millis();
-    }
+    //}
   }
   else 
   {
@@ -669,47 +671,54 @@ void data_to_SD()
       // if the file didn't open, print an error:
       Serial.println("Error opening: " + fileName);
     }
+    Serial.print("iradiancia 1: ");
+    Serial.println(ir1);
+    Serial.print("iradiancia 2: ");
+    Serial.println(ir2);
 }
 
-int laser1()
-{
- /* No cal fer-ho això...
-  *  // Llegim valors amb el laser tancat
-  int LDRRead_low = analogRead(laser1_sensor_pin);
-  delay(500);
 
-  */
-  
-  // Encenem laser  
-  digitalWrite(laser1_pin, HIGH);
+ float laser1()
+{
+digitalWrite(laser1_pin, HIGH);
   // Llegim valors amb el laser obert
   delay(wait_opening_laser);
-  for (int i=0; i<samples_number; i++) //No tinc del tot clar que estigui ben fet, el que vull és que faci 8 lectures.
+  iir1=0;
+  iir=0;
+  for (int i=0; i<samples_number; i++) 
   {
-    iir1 = analogRead(laser1_pin);//Això no es fa així amb el I2C conection...s'ha de fer amb la lliberiria BH1750
-    iir += iir1;
+    iir1 = ir_laser1.readLightLevel();
+    iir = iir1 + iir;
     delay(500);
   }
   digitalWrite(laser1_pin, LOW);
-  int mean = ( iir ) / 8;
+  float mean =  iir / samples_number;
   return mean;
+
+  
   
 }
 
-int laser2(){
-   // Encenem laser  
-  digitalWrite(laser2_pin, HIGH);
+
+float laser2()
+{
+digitalWrite(laser2_pin, HIGH);
   // Llegim valors amb el laser obert
   delay(wait_opening_laser);
-  for (int i=0; i<samples_number; i++) //No tinc del tot clar que estigui ben fet, el que vull és que faci 8 lectures.
+  iir1=0;
+  iir=0;
+  for (int i=0; i<samples_number; i++) 
   {
-    iir1 = analogRead(laser2_pin); //Això no es fa així amb el I2C conection...s'ha de fer amb la lliberiria BH1750
-    iir += iir1;
+    iir1 = ir_laser1.readLightLevel();
+    iir = iir1 + iir;
     delay(500);
   }
   digitalWrite(laser2_pin, LOW);
-  int mean = ( iir ) / 8;
+  float mean =  iir / samples_number;
   return mean;
+  
+  
+  
 }
 
 /*
@@ -829,7 +838,6 @@ void loop()
     last_onoff_agitation = millis();
   }
      
-      
 
 }
 
