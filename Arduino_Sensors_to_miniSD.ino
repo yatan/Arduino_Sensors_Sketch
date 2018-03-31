@@ -17,7 +17,6 @@
 
 #include <SD.h>
 #include <SPI.h>
-#include <Ethernet.h>
 #include "RTClib.h"
 #include <Wire.h>
 #include <DHT.h>
@@ -26,7 +25,6 @@
 
 // Define DHT Sensor Type DHT11 / DHT21 / DHT22 : per anar bé haurien de ser DHT22 ja que tenen més precisió
 #define DHTTYPE DHT22 
-
 
 
 /****
@@ -76,9 +74,6 @@ const int pinDatosDQ = 35;
 
 
 
-
-
-
 /****
  * TIME INTERVAL VARIABLES
  ****/
@@ -116,17 +111,6 @@ const unsigned long interval_data_to_SD = 30L * 1000L;
 unsigned long last_onoff_agitation = 0;             
 const unsigned long interval_1_onoff_agitation = 30L * 1000L;
 const unsigned long interval_2_onoff_agitation = 60L * 1000L;
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -207,31 +191,6 @@ AUTHENTICATION ARDUINO
 //Define de identity of Arduino
 const int id_arduino = 1;
 
-/****
-
-NETWORK SETTINGS 
-
-****/
-
-// Server connect for sending data
-char server[] = "sensors.openspirulina.com";
-
-// assign a MAC address for the ethernet controller:
-byte mac[] = {
-    0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED};
-// fill in an available IP address on your network here,
-// for manual configuration:
-IPAddress ip(192, 168, 137, 177);
-// the router's gateway address:
-IPAddress gateway(192, 168, 137, 1);
-// the subnet:
-IPAddress subnet(255, 255, 255, 0);
-// fill in your Domain Name Server address here:
-IPAddress myDns(8, 8, 8, 8);
-
- 
-
-
 
 /*****
 Global variables for internal use
@@ -294,7 +253,7 @@ String getDateTime()
 
 void setup()
 {
-      // start serial port:
+  // start serial port:
   Serial.begin(9600);
   while (!Serial)
   {
@@ -302,30 +261,30 @@ void setup()
   }
     
     
-    //Establint modo output per als lasers
+ //Establint modo output per als lasers
  pinMode(laser1_pin, OUTPUT);
  pinMode(laser2_pin, OUTPUT);
  //pinMode(laser3_pin, OUTPUT);
-    //Establint modo output per l'agitació
+ //Establint modo output per l'agitació
  pinMode(agitation_pin, OUTPUT);
 
-  //start BH1740 light sensor
+ //start BH1740 light sensor
 
-  Wire.begin();
+ Wire.begin();
  
  if (ir_laser1.begin(BH1750::CONTINUOUS_HIGH_RES_MODE_2)) {
     Serial.println(F("light BH1750 sensor 1 started"));
-  }
-  else {
+ }
+ else {
     Serial.println(F("Error initialising light sensor 1 BH1750"));
-  }
+ }
  
  if (ir_laser2.begin(BH1750::CONTINUOUS_HIGH_RES_MODE_2)) {
     Serial.println(F("light BH1750 sensor 2 started"));
-  }
-  else {
+ }
+ else {
     Serial.println(F("Error initialising light sensor 2 BH1750"));
-  }
+ }
 
   
 
@@ -390,92 +349,13 @@ void setup()
 
   // give the ethernet module time to boot up:
   delay(2000);
-  // start the Ethernet connection using a fixed IP address and DNS server:
-  Ethernet.begin(mac, ip, myDns, gateway, subnet);
-  // DHCP IP ( For automatic IP )
-  //Ethernet.begin(mac);
-  
-  // print the Ethernet board/shield's IP address:
-  Serial.print("My IP address: ");
-  Serial.println(Ethernet.localIP());
 }
 
-
-void get_metheo_data()
-{
-  
-}
-
-
-void get_culture_data()
-{
-
-  
-}
-
-
-
-void get_OD_data()
-{
-
-/*Finalment per aquesta funció no cal llegir quan el laser está apagat.
- * (Només quan será un fotobiorreactor, però això ja farem l'adaptació).
- * El que necessitem obtindre del cultiu és l'absorbància.
- *  A=1/L -log10 (I/I0)
- *    On  L és la distància entre làser en cm (segons disseny: 2cm)
- *        I és la intensitat de llum després de travesar la mostra 
- *            és a dir laser1_sensor  SI hi la bomba agitació == ON.
- *        I0 és la intensitat de llum com si no hi hagués mostra
- *            és adir laser1_sensor   SI no hi hagut agitació els últim X minuts, on X depén de cada soca d'espirulina.
- *  A l'arduino només haurem d'obtenir I(ir) i I0 (ir0), lo altres es calcularà al núvol
- *            
- *            Així doncs la funció quedaria: 
- */
-  //if (agitation_pin == HIGH)
-  //{
-    if(t_agitation_on + t_needed_agitation_on < millis()) //Asegurar-se que fa una estona que funciona l'agitació
-    {
-      ir1 = laser1();
-      ir2 = laser2();
-      Serial.print("passo per get_OD i el valor de ir1 es ");
-      Serial.println(ir2);
-      
-      //ir3 = laser3(); Només dos lasers
-      
-      last_get_OD_data = millis();
-    //}
-  }
-  else 
-  {
-    if(t_agitation_off + t_needed_agitation_on < millis()) //Assegurar-se que fa una estona que NO funciona l'agitació
-    {
-      ir10 = laser1();
-      ir20 = laser2();
-      //ir30 = laser3();
-      
-      last_get_OD_data = millis();
-    }
-  }
-
-
-}
-
-
-
-void onoff_agitation()
-{
-
-
-}
 
 
 // this method makes a HTTP connection to the server:
 void data_to_server()
 {
-  // close any connection before send a new request.
-  // This will free the socket on the WiFi shield
-  client.stop();
-
   //Read values before send to server
   
   // Requests culture temperatures from oneWire Bus
@@ -656,7 +536,7 @@ void data_to_SD()
 }
 
 
- float laser1()
+float laser1()
 {
 digitalWrite(laser1_pin, HIGH);
   // Llegim valors amb el laser obert
@@ -673,8 +553,6 @@ digitalWrite(laser1_pin, HIGH);
   float mean =  iir / samples_number;
   return mean;
 
-  
-  
 }
 
 
@@ -694,9 +572,7 @@ digitalWrite(laser2_pin, HIGH);
   digitalWrite(laser2_pin, LOW);
   float mean =  iir / samples_number;
   return mean;
-  
-  
-  
+
 }
 
 /*
@@ -763,16 +639,6 @@ float dht2_humidity(){
 
 void loop()
 {
-  // if there's incoming data from the net connection.
-  // send it out the serial port.  This is for debugging
-  // purposes only:
-  if (client.available())
-  {
-    char c = client.read();
-    Serial.write(c);
-  }
-
-
   //Function sequence
       
   if (millis()- last_get_metheo_data > interval_get_metheo_data)
