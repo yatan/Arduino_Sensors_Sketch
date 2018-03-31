@@ -54,10 +54,17 @@ RTC DS3231
 // Pin lector SD
 #define sd_card_pin 4
 
+// Pin laser for lux sensor
+#define laser_pin 5
 
 // Instancia a las clases OneWire y DallasTemperature
 OneWire oneWireObjeto(pinDatosDQ);
 DallasTemperature sensorDS18B20(&oneWireObjeto);
+
+// Start lux sensor from BH1750 library using 0x23 address
+BH1750 ir_laser1(0x23); 
+
+
 
 /****
  * TIME INTERVAL VARIABLES
@@ -115,30 +122,43 @@ void setup()
 
  Wire.begin();
  
+if (ir_laser1.begin(BH1750::CONTINUOUS_HIGH_RES_MODE_2)) {
+  if (debug)
+    Serial.println(F("light BH1750 sensor 1 started"));
+}
+else {
+  if (debug)
+    Serial.println(F("Error initialising light sensor 1 BH1750"));
+}
+ 
  // Initialize SD Card
- Serial.println(F("Initializing SD card..."));
+  if (debug)
+    Serial.println(F("Initializing SD card..."));
 
   if (!SD.begin(sd_card_pin))
   {
-    Serial.println(F("Initialization SD failed!"));
-    //return;
+    if (debug)
+      Serial.println(F("Initialization SD failed!"));
   }
   else
   {
-    Serial.println(F("Initialization SD done."));
+    if (debug)
+      Serial.println(F("Initialization SD done."));
   }
 
   // Comprobamos si tenemos el RTC conectado
   if (!rtc.begin())
   {
-    Serial.println(F("No clock working"));
+    if (debug)
+      Serial.println(F("No clock working"));
   }
 
   // Setting RTC time for first time programing RTC
   //rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
 
-  Serial.println(getDateTime());
-
+  if (debug)
+    Serial.println(getDateTime());
+  
   // Obtain a free file name for writting to SD
   fileName += fileCount;
   fileName += ".txt";
@@ -149,26 +169,25 @@ void setup()
     fileName += fileCount;
     fileName += ".txt";
   }
-  if(debug)
-    Serial.println("Writing in file: " + fileName);
 
+  if (debug)
+    Serial.println("Writing in file: " + fileName);
+  
 
   // Initialize DS18B20 Temperature sensors
-  if(debug)
+  if (debug)
     Serial.println(F("Initializing DS18B20 BUS..."));
   sensorDS18B20.begin();
 
 
   // Initialize DHT Temp/humidity sensors
-  if(debug)
+  if (debug)
     Serial.println(F("Initializing DHT Sensor 1..."));
   dht1.begin();
-  //Serial.println("Fallo DHT_1");
   
-  if(debug)
+  if (debug)
     Serial.println(F("Initializing DHT Sensor 2..."));
   dht2.begin();
-  //Serial.println("Fallo DHT_2");
 
   delay(1000);
 }
@@ -256,13 +275,15 @@ void capture_data()
     
     // close the file:
     myFile.close();
+
     if (debug)
       Serial.println("Writting SD done.");
   }
   else
   {
     // if the file didn't open, print an error:
-    Serial.println("Error opening: " + fileName);
+    if (debug)
+      Serial.println("Error opening: " + fileName);
   }
 
 }
