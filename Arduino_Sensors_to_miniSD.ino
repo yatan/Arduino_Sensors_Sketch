@@ -21,7 +21,6 @@
 #include <Wire.h>
 #include <DHT.h>
 #include <DallasTemperature.h>
-#include <BH1750.h>
 
 // Define DHT Sensor Type DHT11 / DHT21 / DHT22 : per anar bé haurien de ser DHT22 ja que tenen més precisió
 #define DHTTYPE DHT22 
@@ -32,31 +31,10 @@
  ****/
  
 // Pins conexion DHT22: temperature and humidity sensor
-const int DHT1_Pin = 30;
-const int DHT2_Pin = 40;
+#define DHT1_Pin 30
+#define DHT2_Pin 40
 
-/**
-// Pins for LDR 1 to 4 sensors 
-#define LDR_sensor1_pin A3  //Segurament no s'utiltizarà aquest tipus de sensor...
-#define LDR_sensor2_pin A4  //és massa poc precís...
-#define LDR_sensor3_pin A5
-#define LDR_sensor4_pin A6
 
-**/
-
-/*
-// Pins for LDR laser 1 to 3 receivers
-#define laser1_sensor_pin A0   // Passa a ser I2C, és a dir al a4, pero també s'ha de dir
-#define laser2_sensor_pin A1    // que només en pot haver 2...així que haurem de mirar com ho fem
-#define laser3_sensor_pin A2
-
-*/
-
-// Start lux sensor from BH1750 library
-
-BH1750 ir_laser1(0x23); //Si el ADDR està inactiu
-
-BH1750 ir_laser2(0x5C); //Si el ADDR està amb més de 0.7V
 
 // Pins per connectar els emisors de llum laser
 
@@ -70,7 +48,7 @@ BH1750 ir_laser2(0x5C); //Si el ADDR està amb més de 0.7V
 #define agitation_pin 41 //M'he inventat aquest PIN fran...no sé si seria correcte..
 
 // Pin donde se conecta el bus 1-Wire
-const int pinDatosDQ = 35; 
+#define pinDatosDQ 35
 
 
 
@@ -78,101 +56,9 @@ const int pinDatosDQ = 35;
  * TIME INTERVAL VARIABLES
  ****/
 
-//Time interval to get metheo data
-unsigned long last_get_metheo_data = 0;             
-const unsigned long interval_get_metheo_data = 30L * 1000L;
-
-
-//Time interval to get culture data
-unsigned long last_get_culture_data = 0;             
-const unsigned long interval_get_culture_data = 0L * 1000L;
-
-
-//Time interval to get Optical Density data
-unsigned long last_get_OD_data = 0;             
-const unsigned long interval_get_OD_data = 30L * 1000L;
-
-//Time of agitation on to get Optical Density
-unsigned long t_needed_agitation_on = 2L*60L*1000L;
-unsigned long t_needed_agitation_off = 15L*60L*1000L;
-
-
-//Time interval to send data to server
-unsigned long last_data_to_server = 0;             
-const unsigned long interval_data_to_server = 30L * 1000L;
-
-
 //Time interval to send data to SD card
 unsigned long last_data_to_SD = 0;             
 const unsigned long interval_data_to_SD = 30L * 1000L;
-
-
-//Time interval to onoff_agitation
-unsigned long last_onoff_agitation = 0;             
-const unsigned long interval_1_onoff_agitation = 30L * 1000L;
-const unsigned long interval_2_onoff_agitation = 60L * 1000L;
-
-
-
-/****
- * 
- * CULTURE VARIABLES
- *
- ****/
-
-
-
-/****
- * 
- *  GET OD DATA VARAIBLES
- *
- ****/
-
-
-int laser_sensor1 = 0; //Valor de la irradiancia, així doncs millor anomenarlo ir, però com que això cambiar-ho s'ha de cambiar a molttsp uestos abans t'ho pregunto. 
-
-//Irradiancia del laser 1
-float ir1 = 0 ;
-float ir10 = 500;  //Aquest valor s'hauria de contrastar un primer cop
-
-//Irradiancia del laser 2
-float ir2 = 0 ;
-float ir20 = 500; //Aquest valor s'hauria de contrastar un primer cop
-
-
-//Irradiancia del laser 3
-float ir3 = 0 ;
-float ir30 = 500; //Aquest valor s'hauria de contrastar un primer cop
-
-// Waiting for opening laser
-unsigned long wait_opening_laser = 2000;
-
-
-/****
- * 
- * AGITATION VARIABLES
- *
- ****/
-
-
-
-//Time measuring agitation is on
-unsigned long t_agitation_on = 0L;
-//Time measuring agitation is off
-unsigned long t_agitation_off = 0L;
-
-//
-int temp_difference = 3; //La diferència de temperatura que fa que l'agitació comenci
-int lux_min_agitation = 10; //Els mínims lux que ha d'haver per comenar a agitar. 
-int lux_max_agitation = 50000; //Els lux perque l'agitació estigui en continuo.
-
-
-
-/***
- * prendre varies mesures
- ***/
-int samples_number = 8;
-
 
 
 // Instancia a las clases OneWire y DallasTemperature
@@ -197,8 +83,8 @@ Global variables for internal use
  *****/
 
 //Irradiancia for get_OD_function
- unsigned long iir = 0L; 
- int iir1 = 0;
+unsigned long iir = 0L; 
+int iir1 = 0;
 
 //Temperature
 float temp1; 
@@ -210,17 +96,12 @@ float ambient1;
 float ambient2;
 
 
-
-
- 
 // File handler
 File myFile;
 int fileCount = 0;
 String fileName = "";
 // RTC DS3231 (clock sensor)
 //RTC_DS3231 rtc; not needed now
-// Initialize the network library instance:
-EthernetClient client;
 // DHT Temp/Humity
 DHT dht1(DHT1_Pin, DHTTYPE);
 DHT dht2(DHT2_Pin, DHTTYPE);
@@ -261,35 +142,12 @@ void setup()
   }
     
     
- //Establint modo output per als lasers
- pinMode(laser1_pin, OUTPUT);
- pinMode(laser2_pin, OUTPUT);
- //pinMode(laser3_pin, OUTPUT);
- //Establint modo output per l'agitació
- pinMode(agitation_pin, OUTPUT);
-
- //start BH1740 light sensor
+//start BH1740 light sensor
 
  Wire.begin();
  
- if (ir_laser1.begin(BH1750::CONTINUOUS_HIGH_RES_MODE_2)) {
-    Serial.println(F("light BH1750 sensor 1 started"));
- }
- else {
-    Serial.println(F("Error initialising light sensor 1 BH1750"));
- }
- 
- if (ir_laser2.begin(BH1750::CONTINUOUS_HIGH_RES_MODE_2)) {
-    Serial.println(F("light BH1750 sensor 2 started"));
- }
- else {
-    Serial.println(F("Error initialising light sensor 2 BH1750"));
- }
-
-  
-1
-  // Initialize SD Card
-  Serial.println("Initializing SD card...");
+ // Initialize SD Card
+ Serial.println("Initializing SD card...");
 
   if (!SD.begin(4))
   {
@@ -469,83 +327,6 @@ void data_to_SD()
 }
 
 
-float laser1()
-{
-digitalWrite(laser1_pin, HIGH);
-  // Llegim valors amb el laser obert
-  delay(wait_opening_laser);
-  iir1=0;
-  iir=0;
-  for (int i=0; i<samples_number; i++) 
-  {
-    iir1 = ir_laser1.readLightLevel();
-    iir = iir1 + iir;
-    delay(500);
-  }
-  digitalWrite(laser1_pin, LOW);
-  float mean =  iir / samples_number;
-  return mean;
-
-}
-
-
-float laser2()
-{
-digitalWrite(laser2_pin, HIGH);
-  // Llegim valors amb el laser obert
-  delay(wait_opening_laser);
-  iir1=0;
-  iir=0;
-  for (int i=0; i<samples_number; i++) 
-  {
-    iir1 = ir_laser1.readLightLevel();
-    iir = iir1 + iir;
-    delay(500);
-  }
-  digitalWrite(laser2_pin, LOW);
-  float mean =  iir / samples_number;
-  return mean;
-
-}
-
-/*
-
-int laser3(){
-  // Llegim valors amb el laser tancat
-  int LDRRead_low = analogRead(laser3_sensor_pin);
-  delay(500);
-  // Encenem laser
-  digitalWrite(laser3_pin, HIGH);
-  // Llegim valors amb el laser obert
-  int LDRRead_high = analogRead(laser3_sensor_pin);
-  delay(500);
-  // Tanquem els lasers
-  digitalWrite(laser3_pin, LOW);
-  // Calculem valor mitja entre els 2 valors.
-  // Aqui aplicar el calcul necessari
-  int mean = ( LDRRead_low + LDRRead_high ) / 2;
-  return mean;
-}
-
-*/
-/*
-int ldr1_lux(){
-  return analogRead(LDR_sensor1_pin);
-}
-
-int ldr2_lux(){
-  return analogRead(LDR_sensor2_pin);
-}
-
-int ldr3_lux(){
-  return analogRead(LDR_sensor3_pin);
-}
-
-int ldr4_lux(){
-  return analogRead(LDR_sensor4_pin);
-}
-
-*/
 
 float lecturaTemperatura(int posicio){
   return sensorDS18B20.getTempCByIndex(posicio);
@@ -573,26 +354,6 @@ float dht2_humidity(){
 void loop()
 {
   //Function sequence
-      
-  if (millis()- last_get_metheo_data > interval_get_metheo_data)
-  {
-      get_metheo_data();
-      last_get_metheo_data = millis();
-  }
-
-  if (millis()-last_get_culture_data > interval_get_culture_data)
-  {
-    get_culture_data();
-    last_get_culture_data = millis();
-  }
-
-  if (millis()-last_get_OD_data > interval_get_culture_data)
-  
-  {
-    get_OD_data();
-    last_get_OD_data = millis();
-  }
-
   if (millis()-last_data_to_server > interval_data_to_server)
   {
     data_to_server();
@@ -605,25 +366,8 @@ void loop()
     data_to_SD();
 
     last_data_to_SD = millis(); 
-  }
-
-
-  if (millis()-last_onoff_agitation > interval_1_onoff_agitation)
-  {
-
-    onoff_agitation();
-    last_onoff_agitation = millis();
-  }
-     
+  }    
 
 }
-
-
-
-
-
-
-
-
 
 
