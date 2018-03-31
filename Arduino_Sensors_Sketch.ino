@@ -23,8 +23,8 @@
 #include <DallasTemperature.h>
 #include <BH1750.h>
 
-// Define DHT Sensor Type DHT11 / DHT21 / DHT22 : per anar bé haurien de ser DHT22 ja que tenen més precisió
-#define DHTTYPE DHT22 
+// Debug mode for verbose info on serial monitor
+boolean debug = true;
 
 
 /****
@@ -35,12 +35,15 @@
 
 DHT x 2 (Temperature / Humidity)
 DS18B20 x 3 (Temperature)
-BH1740 x 1 (Lux Sensor)
+BH1750 x 1 (Lux Sensor)
 ------------------
 SD Card Reader
 RTC DS3231
 
 */
+
+// Define DHT Sensor Type DHT11 / DHT21 / DHT22 : per anar bé haurien de ser DHT22 ja que tenen més precisió
+#define DHTTYPE DHT22 
  
 // Pins conexion DHT22: temperature and humidity sensor
 #define DHT1_Pin 7
@@ -48,8 +51,13 @@ RTC DS3231
 
 // Pin donde se conecta el bus 1-Wire
 #define pinDatosDQ 2
+// Pin lector SD
 #define sd_card_pin 4
 
+
+// Instancia a las clases OneWire y DallasTemperature
+OneWire oneWireObjeto(pinDatosDQ);
+DallasTemperature sensorDS18B20(&oneWireObjeto);
 
 /****
  * TIME INTERVAL VARIABLES
@@ -58,37 +66,6 @@ RTC DS3231
 //Time interval to send data to SD card
 unsigned long last_data_to_SD = 0;             
 const unsigned long interval_data_to_SD = 60L * 1000L; // 60 segons * 1000 ms
-
-
-// Instancia a las clases OneWire y DallasTemperature
-OneWire oneWireObjeto(pinDatosDQ);
-DallasTemperature sensorDS18B20(&oneWireObjeto);
-
-
-// Debug mode for verbose info on serial monitor
-boolean debug = true;
-
-/*****
-
-AUTHENTICATION ARDUINO
-
-*****/
-//Define de identity of Arduino
-const int id_arduino = 1;
-
-
-/*****
-Global variables for internal use
- *****/
-
-//Temperature
-float temp1; 
-float temp2; 
-float temp3; 
-float temp4; 
-float temp5; 
-float ambient1; 
-float ambient2;
 
 
 // File handler
@@ -134,27 +111,27 @@ void setup()
   }
     
     
-//start BH1740 light sensor
+// Start BH1750 light sensor
 
  Wire.begin();
  
  // Initialize SD Card
- Serial.println("Initializing SD card...");
+ Serial.println(F("Initializing SD card..."));
 
   if (!SD.begin(sd_card_pin))
   {
-    Serial.println("Initialization SD failed!");
+    Serial.println(F("Initialization SD failed!"));
     //return;
   }
   else
   {
-    Serial.println("Initialization SD done.");
+    Serial.println(F("Initialization SD done."));
   }
 
   // Comprobamos si tenemos el RTC conectado
   if (!rtc.begin())
   {
-    Serial.println("No clock working");
+    Serial.println(F("No clock working"));
   }
 
   // Setting RTC time for first time programing RTC
@@ -178,154 +155,125 @@ void setup()
 
   // Initialize DS18B20 Temperature sensors
   if(debug)
-    Serial.println("Initializing DS18B20 BUS...");
+    Serial.println(F("Initializing DS18B20 BUS..."));
   sensorDS18B20.begin();
 
 
   // Initialize DHT Temp/humidity sensors
   if(debug)
-    Serial.println("Initializing DHT Sensor 1...");
+    Serial.println(F("Initializing DHT Sensor 1..."));
   dht1.begin();
   //Serial.println("Fallo DHT_1");
   
   if(debug)
-    Serial.println("Initializing DHT Sensor 2...");
+    Serial.println(F("Initializing DHT Sensor 2..."));
   dht2.begin();
   //Serial.println("Fallo DHT_2");
 
-  // give the ethernet module time to boot up:
-  delay(2000);
-}
-
-float lecturaTemperatura(int posicio){
-  return sensorDS18B20.getTempCByIndex(posicio);
-}
-
-float dht1_temp(){
-  return dht1.readTemperature();
-}
-
-float dht1_humidity(){
-  return dht1.readHumidity();
-}
-
-float dht2_temp(){
-  return dht2.readTemperature();
-}
-
-float dht2_humidity(){
-  return dht2.readHumidity();
+  delay(1000);
 }
 
 
-// this method makes a HTTP connection to the server:
-void data_to_server()
+
+
+// Read values and store to variables
+void capture_data()
 {
-  //Read values before send to server
-  
+
+  // Temperature DS18B20 array sensors
+  float array_temp1; 
+  float array_temp2; 
+  float array_temp3; 
+
+  // DHT22 sensors
+  float ambient1_temp; 
+  float ambient1_humetat;
+  float ambient2_temp;
+  float ambient2_humetat;
+
+  // BH1750 
+  float lux_sensor1;
+
+
   // Requests culture temperatures from oneWire Bus
   sensorDS18B20.requestTemperatures();
-  temp1 = lecturaTemperatura(0);
-  temp2 = lecturaTemperatura(1);
-  temp3 = lecturaTemperatura(2);
-  temp4 = lecturaTemperatura(3);
-  temp5 = lecturaTemperatura(4);
+  array_temp1 = sensorDS18B20.getTempCByIndex(0);
+  array_temp2 = sensorDS18B20.getTempCByIndex(1);
+  array_temp3 = sensorDS18B20.getTempCByIndex(2);
 
-  // Request  Ambient temperature
-  ambient1 = dht1_temp();
-  ambient2 = dht2_temp();
+  // Request Ambient temperature
+  ambient1_temp = dht1.readTemperature();
+  ambient2_temp = dht2.readTemperature();
 
-  // Read Lux LDR Sensors
-  int lux_sensor1 = 1;
+  // Request Ambient Humidity
+  ambient1_humetat = dht1.readHumidity();
+  ambient2_humetat = dht2.readHumidity();
+
+
+  // Writting results to file
+  myFile = SD.open(fileName, FILE_WRITE);
+
+  // if the file opened okay, write to it:
+  if (myFile)
+  {
+    if (debug)
+      Serial.println("Writing to: " + fileName);
+
+    //DateTime from RTC
+    myFile.print(getDateTime());
+    
+    //Temperatures del cultiu 
+    //Sensor Temperatura 1
+    myFile.print('#');
+    myFile.print("sensor_1:");
+    myFile.print(array_temp1);
+    //Sensor Temperatura 2
+    myFile.print('#');
+    myFile.print("sensor_2:");
+    myFile.print(array_temp2);
+    //Sensor Temperatura 3
+    myFile.print('#');
+    myFile.print("sensor_3:");
+    myFile.print(array_temp3);
+    
+    //Sensor Temperatura Ambient 1
+    myFile.print('#');
+    myFile.print("ambient_1_temp:");
+    myFile.print(ambient1_temp);
+    //Sensor Temperatura Ambient 2
+    myFile.print('#');
+    myFile.print("ambient_2_temp:");
+    myFile.println(ambient2_temp);      
+
+    //Sensor Humetat Ambient 1
+    myFile.print('#');
+    myFile.print("ambient_1_humetat:");
+    myFile.print(ambient1_humetat);
+    //Sensor Humetat Ambient 2
+    myFile.print('#');
+    myFile.print("ambient_2_humetat:");
+    myFile.println(ambient2_humetat);     
+    
+    // close the file:
+    myFile.close();
+    if (debug)
+      Serial.println("Writting SD done.");
+  }
+  else
+  {
+    // if the file didn't open, print an error:
+    Serial.println("Error opening: " + fileName);
+  }
 
 }
-
-
-
- /****f* Arduino_Sensors_Sketch/writeDataToSD
-  *  NAME
-  *    writeDataToSD
-  *  SYNOPSIS
-  *    writeDataToSD( int sensor1, ... )
-  *  FUNCTION
-  *    When the sensor read a value and whant to save to any destination, we use this function to save that to 
-  *    persisntent file on SD Card.
-  *  INPUTS
-  *    sensor1    - Readed value of sensor 1.
-  *  RESULT
-  *    Write the input values to SD Card on fileName.txt with current DateTime.
-  ******
-  */
-
-void data_to_SD()
-{
-    // Writting results to file
-    myFile = SD.open(fileName, FILE_WRITE);
-
-    // if the file opened okay, write to it:
-    if (myFile)
-    {
-      if (debug)
-        Serial.println("Writing to: " + fileName);
-
-      //DateTime from RTC
-      //myFile.print(getDateTime());
-      
-      //Temperatures del cultiu 
-      //Sensor Temperatura 1
-      myFile.print('#');
-      myFile.print("sensor_1:");
-      myFile.print(temp1);
-      //Sensor Temperatura 2
-      myFile.print('#');
-      myFile.print("sensor_2:");
-      myFile.print(temp2);
-      //Sensor Temperatura 3
-      myFile.print('#');
-      myFile.print("sensor_3:");
-      myFile.print(temp3);
-      //Sensor Temperatura 4
-      myFile.print('#');
-      myFile.print("sensor_4:");
-      myFile.print(temp4);
-      //Sensor Temperatura 5
-      myFile.print('#');
-      myFile.print("sensor_5:");
-      myFile.print(temp5);
-      
-      //Sensor Temperatura Ambient 1
-      myFile.print('#');
-      myFile.print("ambient_1:");
-      myFile.print(ambient1);
-      //Sensor Temperatura Ambient 2
-      myFile.print('#');
-      myFile.print("ambient_2:");
-      myFile.println(ambient2);      
-      
-      // close the file:
-      myFile.close();
-      if (debug)
-        Serial.println("Writting SD done.");
-    }
-    else
-    {
-      // if the file didn't open, print an error:
-      Serial.println("Error opening: " + fileName);
-    }
-}
-
-
-
 
 void loop()
 {
 
   if (millis()-last_data_to_SD > interval_data_to_SD)
   {
-    data_to_server();
-    // Write data sensors to SD
-    data_to_SD();
-
+    // Llegir informacio dels sensors
+    capture_data();
     last_data_to_SD = millis(); 
   }    
 
