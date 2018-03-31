@@ -287,7 +287,7 @@ void setup()
  }
 
   
-
+1
   // Initialize SD Card
   Serial.println("Initializing SD card...");
 
@@ -372,8 +372,6 @@ void data_to_server()
   // ! Borrar la seguent linea, ja que dona error si no hi ha sensor connectat !
   ambient2 = 0;
 
-
-
 /*
   // Read Lux LDR Sensors
   int lux_sensor1 = ldr1_lux();
@@ -381,71 +379,6 @@ void data_to_server()
   int lux_sensor3 = ldr3_lux();
   int lux_sensor4 = ldr4_lux();
 */
-
-  // if there's a successful connection:
-  if (client.connect(server, 80))
-  {
-    Serial.println("connecting...");
-    // send the HTTP GET request:
-    
-    String cadena = "GET /afegir.php?temp1=";
-    cadena += temp1;
-    cadena += "&temp2=";
-    cadena += temp2;
-    cadena += "&temp3=";
-    cadena += temp3;
-    cadena += "&temp4=";
-    cadena += temp4;
-    cadena += "&temp5=";
-    cadena += temp5;
-    // Append Ambient temperatures
-    cadena += "&ta1=";
-    cadena += ambient1;
-    cadena += "&ta2=";
-    cadena += ambient2; 
-  /*
-    // Append LDR sensors
-    cadena += "&ldr1=";
-    cadena += lux_sensor1;
-    cadena += "&ldr2=";
-    cadena += lux_sensor2;
-    cadena += "&ldr3=";
-    cadena += lux_sensor3;
-    cadena += "&ldr4=";
-    cadena += lux_sensor4;
-    
-    */
-    
-    // Append LDR Laser Sensors
-    cadena += "&irradiancia1=";
-    cadena += ir1;    
-    cadena += "&irradiancia1_0=";
-    cadena += ir10;  
-    cadena += "&irradiancia2=";
-    cadena += ir2;    
-    cadena += "&irradiancia2_0=";
-    cadena += ir20;  
-    //cadena += "&laser3=";
-    //cadena += laser_sensor3;  
-   
-    
-    
-    // Append our ID Arduino
-    cadena += "&idarduino=";
-    cadena += id_arduino;
-    cadena += " HTTP/1.1";
-
-    if(debug)
-      Serial.println(cadena);
-    
-    // Send string to internet  
-    client.println(cadena);
-    
-    client.println("Host: sensors.openspirulina.com");
-    client.println("User-Agent: arduino-ethernet-1");
-    client.println("Connection: close");
-    client.println();
-
 
     // note the time that the connection was made:
     last_data_to_server = millis();
