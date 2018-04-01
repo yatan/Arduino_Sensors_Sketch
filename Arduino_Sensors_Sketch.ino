@@ -118,18 +118,18 @@ void setup()
   }
     
     
-// Start BH1750 light sensor
+  // Start BH1750 light sensor
 
- Wire.begin();
+  Wire.begin();
  
-if (ir_laser1.begin(BH1750::CONTINUOUS_HIGH_RES_MODE_2)) {
-  if (debug)
-    Serial.println(F("light BH1750 sensor 1 started"));
-}
-else {
-  if (debug)
-    Serial.println(F("Error initialising light sensor 1 BH1750"));
-}
+  if (ir_laser1.begin(BH1750::CONTINUOUS_HIGH_RES_MODE_2)) {
+    if (debug)
+      Serial.println(F("light BH1750 sensor 1 started"));
+  }
+  else {
+    if (debug)
+      Serial.println(F("Error initialising light sensor 1 BH1750"));
+  }
  
  // Initialize SD Card
   if (debug)
@@ -228,6 +228,17 @@ void capture_data()
   ambient1_humetat = dht1.readHumidity();
   ambient2_humetat = dht2.readHumidity();
 
+  // Request Lux light
+  unsigned long iir=0;
+
+  for (int i=0; i<3; i++) 
+  {
+    unsigned long iir1 = ir_laser1.readLightLevel();
+    iir += iir1;
+    delay(50);
+  }
+
+  lux_sensor1 = iir / 3;
 
   // Writting results to file
   myFile = SD.open(fileName, FILE_WRITE);
@@ -271,7 +282,12 @@ void capture_data()
     //Sensor Humetat Ambient 2
     myFile.print('#');
     myFile.print("ambient_2_humetat:");
-    myFile.println(ambient2_humetat);     
+    myFile.print(ambient2_humetat);     
+
+    //Lux sensor
+    myFile.print('#');
+    myFile.print("lux:");
+    myFile.println(lux_sensor1);
     
     // close the file:
     myFile.close();
