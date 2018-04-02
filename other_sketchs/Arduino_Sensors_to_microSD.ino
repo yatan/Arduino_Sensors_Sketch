@@ -189,6 +189,26 @@ void setup()
     Serial.println(F("Initializing DHT Sensor 2..."));
   dht2.begin();
 
+  // Writting title headers to file
+  myFile = SD.open(fileName, FILE_WRITE);
+
+  // if the file opened okay, write to it:
+  if (myFile)
+  {
+    myFile.print(F("DateTime#"));
+    myFile.print(F("sensor_1#"));
+    myFile.print(F("sensor_2#"));
+    myFile.print(F("sensor_3#"));
+    myFile.print(F("ambient_1_temp#"));
+    myFile.print(F("ambient_2_temp#"));  
+    myFile.print(F("ambient_1_humetat#"));  
+    myFile.print(F("ambient_2_humetat#"));        
+    myFile.println(F("lux#"));    
+    
+    // close the file:
+    myFile.close();
+  }
+
   delay(1000);
 }
 
@@ -255,45 +275,37 @@ void capture_data()
     //Temperatures del cultiu 
     //Sensor Temperatura 1
     myFile.print('#');
-    myFile.print("sensor_1:");
     myFile.print(array_temp1);
     //Sensor Temperatura 2
     myFile.print('#');
-    myFile.print("sensor_2:");
     myFile.print(array_temp2);
     //Sensor Temperatura 3
     myFile.print('#');
-    myFile.print("sensor_3:");
     myFile.print(array_temp3);
     
     //Sensor Temperatura Ambient 1
     myFile.print('#');
-    myFile.print("ambient_1_temp:");
     myFile.print(ambient1_temp);
     //Sensor Temperatura Ambient 2
     myFile.print('#');
-    myFile.print("ambient_2_temp:");
     myFile.println(ambient2_temp);      
 
     //Sensor Humetat Ambient 1
     myFile.print('#');
-    myFile.print("ambient_1_humetat:");
     myFile.print(ambient1_humetat);
     //Sensor Humetat Ambient 2
     myFile.print('#');
-    myFile.print("ambient_2_humetat:");
     myFile.print(ambient2_humetat);     
 
     //Lux sensor
     myFile.print('#');
-    myFile.print("lux:");
     myFile.println(lux_sensor1);
     
     // close the file:
     myFile.close();
 
     if (debug)
-      Serial.println("Writting SD done.");
+      Serial.println(F("Writting SD done."));
   }
   else
   {
