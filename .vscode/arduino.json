@@ -1,4 +1,5 @@
 {
-    "board": "arduino:avr:uno",
-    "sketch": "Arduino_Sensors_Sketch.ino"
+    "board": "arduino:avr:mega",
+    "sketch": "Arduino_Sensors_Sketch.ino",
+    "configuration": "cpu=atmega2560"
 }
