@@ -409,9 +409,6 @@ void capture_data()
     client.println("Connection: close");
     client.println();
 
-
-    // note the time that the connection was made:
-    last_data_to_server = millis();
   }
   else
   {
@@ -423,11 +420,11 @@ void capture_data()
 void loop()
 {
 
-  if (millis()-last_data_to_SD > interval_data_to_SD)
+  if (millis()-last_data > interval_data)
   {
     // Llegir informacio dels sensors
     capture_data();
-    last_data_to_SD = millis(); 
+    last_data = millis(); 
   }    
 
 }

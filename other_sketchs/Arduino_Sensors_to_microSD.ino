@@ -72,7 +72,7 @@ BH1750 ir_laser1(0x23);
 
 //Time interval to send data to SD card
 unsigned long last_data_to_SD = 0;             
-const unsigned long interval_data_to_SD = 60L * 1000L; // 60 segons * 1000 ms
+const unsigned long interval_data_to_SD = 15L * 60L * 1000L; // 15 minuts * 60 segons * 1000 ms
 
 
 // File handler
