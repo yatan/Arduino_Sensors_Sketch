@@ -298,7 +298,7 @@ void capture_data()
   float PH_mitja = (float)phSuma / 5;
   float PH_voltage = PH_mitja * (5.0 / 1023.0);
   // Adaptació a la recta y=mx+b  y = -5.70 * PH_V + 21.34
-  float ph_Value = -5.70 * PH_voltage + 21.34;
+  float ph_Value = 6 * PH_voltage - 2;
   
 
   // Requests culture temperatures from oneWire Bus
@@ -355,7 +355,7 @@ void capture_data()
     myFile.print(ambient1_temp);
     //Sensor Temperatura Ambient 2
     myFile.print('#');
-    myFile.println(ambient2_temp);      
+    myFile.print(ambient2_temp);      
 
     //Sensor Humetat Ambient 1
     myFile.print('#');
