@@ -10,25 +10,37 @@ inputfile = 'dump_1.txt'
 id_arduino = 2
 
 def upload(Valor):
-	print Valor.data
+	data = {}
 
-data = {}
-data['name'] = 'Somebody Here'
-data['location'] = 'Northampton'
-data['language'] = 'Python'
+	data['idarduino'] = id_arduino
+	# data['data'] = Valor.data
+	data['temp1'] = Valor.sensor1
+	data['temp2'] = Valor.sensor2
+	data['temp3'] = Valor.sensor3
+	# Temperatura ambiental
+	data['ta1'] = Valor.ambient1_temp
+	data['ta2'] = Valor.ambient2_temp
+	# Humitat ambiental
+	data['ha1'] = Valor.ambient1_humetat
+	data['ha2'] = Valor.ambient2_humetat
+	# LUX
+	data['ldr1'] = Valor.lux
+	# PH
+	data['ph1'] = Valor.ph
 
-url_values = urllib.urlencode(data)
-#print url_values
+	
+	url_values = urllib.urlencode(data)
+	print url_values
 
-url = 'http://sensors.openspirulina.com/afegir.php'
-full_url = url + '?' + url_values
+	url = 'http://sensors.openspirulina.com/afegir.php'
+	full_url = url + '?' + url_values
 
 
-try: response = urllib2.urlopen(full_url)
-except urllib2.URLError as e:
-	print e.reason
+	try: response = urllib2.urlopen(full_url)
+	except urllib2.URLError as e:
+		print e.reason
 
-print response.read()
+	print response.read()
 
 class Valor:
 	def __init__(self):
@@ -56,8 +68,8 @@ with open(inputfile, 'r') as f:
 			line = line.replace('\n','')
 			# Afegir a estructura dades
 			temporal = line.split('#')
-			# Data
 			valor_tmp = Valor()
+			# Data
 			valor_tmp.data = temporal[0]
 			# Temp 1
 			valor_tmp.sensor1 = temporal[1]
@@ -65,8 +77,20 @@ with open(inputfile, 'r') as f:
 			valor_tmp.sensor2 = temporal[2]
 			# Temp 3
 			valor_tmp.sensor3 = temporal[3]
+			# Temp Ambient 1
+			valor_tmp.ambient1_temp = temporal[4]
+			# Temp Ambient 2
+			valor_tmp.ambient2_temp = temporal[5]
+			# Humetat Ambient 1
+			valor_tmp.ambient1_humetat = temporal[6]
+			# Humetat Ambient 2
+			valor_tmp.ambient2_humetat = temporal[7]
+			# LUX
+			valor_tmp.lux = temporal[8]
+			# PH
+			valor_tmp.ph = temporal[9]
 
-			
+			# Send to uploader
 			upload (valor_tmp)
 		except IOError:
 			print "Could not read line:", line
