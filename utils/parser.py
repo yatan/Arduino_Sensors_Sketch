@@ -5,7 +5,12 @@ import urllib2
 
 
 inputfile = 'dump_1.txt'
-elements = []
+
+# Id to upload data
+id_arduino = 2
+
+def upload(Valor):
+	print Valor.data
 
 data = {}
 data['name'] = 'Somebody Here'
@@ -13,11 +18,17 @@ data['location'] = 'Northampton'
 data['language'] = 'Python'
 
 url_values = urllib.urlencode(data)
-print url_values
+#print url_values
 
-url = 'http://www.example.com/example.cgi'
+url = 'http://sensors.openspirulina.com/afegir.php'
 full_url = url + '?' + url_values
-data = urllib2.urlopen(full_url)
+
+
+try: response = urllib2.urlopen(full_url)
+except urllib2.URLError as e:
+	print e.reason
+
+print response.read()
 
 class Valor:
 	def __init__(self):
@@ -32,16 +43,32 @@ class Valor:
 		# Humetat ambient
 		self.ambient1_humetat = None
 		self.ambient2_humetat = None
+		# Lux
+		self.lux = None
+		# PH
+		self.ph = None
 
-with open(inputfile) as f:
+with open(inputfile, 'r') as f:
 	next(f)		
 	for line in f:
-		# Eliminar \n cada linea
-		line = line.replace('\n','')
-		# Afegir a estructura dades
-		temporal = line.split('#')
-		valor_tmp = Valor()
-		valor_tmp.data = temporal[0]
-		
-		print valor_tmp.data
+		try:
+			# Eliminar \n cada linea
+			line = line.replace('\n','')
+			# Afegir a estructura dades
+			temporal = line.split('#')
+			# Data
+			valor_tmp = Valor()
+			valor_tmp.data = temporal[0]
+			# Temp 1
+			valor_tmp.sensor1 = temporal[1]
+			# Temp 2
+			valor_tmp.sensor2 = temporal[2]
+			# Temp 3
+			valor_tmp.sensor3 = temporal[3]
+
+			
+			upload (valor_tmp)
+		except IOError:
+			print "Could not read line:", line
+
 	
