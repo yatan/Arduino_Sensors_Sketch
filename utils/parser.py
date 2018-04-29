@@ -2,18 +2,19 @@
 
 import urllib
 import urllib2
+import datetime
 
 
-inputfile = 'dump_1.txt'
+inputfile = 'eth 16 11abril2016.TXT'
 
 # Id to upload data
-id_arduino = 2
+id_arduino = 4
 
 def upload(Valor):
 	data = {}
 
 	data['idarduino'] = id_arduino
-	# data['data'] = Valor.data
+	data['data'] = Valor.data
 	data['temp1'] = Valor.sensor1
 	data['temp2'] = Valor.sensor2
 	data['temp3'] = Valor.sensor3
@@ -70,7 +71,9 @@ with open(inputfile, 'r') as f:
 			temporal = line.split('#')
 			valor_tmp = Valor()
 			# Data
-			valor_tmp.data = temporal[0]
+			mala_fecha = temporal[0].replace('/','-')
+			fecha = datetime.datetime.strptime(mala_fecha, '%d-%m-%Y %H:%M:%S')
+			valor_tmp.data = fecha.strftime('%Y-%m-%d %H:%M:%S')
 			# Temp 1
 			valor_tmp.sensor1 = temporal[1]
 			# Temp 2
