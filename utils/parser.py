@@ -3,12 +3,17 @@
 import urllib
 import urllib2
 import datetime
+import sys
 
 
-inputfile = 'eth 16 11abril2016.TXT'
+if len (sys.argv) != 3 :
+    print "Usage: python parser.py <id_arduino> <file>"
+    sys.exit (1)
+
+inputfile = sys.argv[2]
 
 # Id to upload data
-id_arduino = 4
+id_arduino = sys.argv[1]
 
 def upload(Valor):
 	data = {}
@@ -97,5 +102,7 @@ with open(inputfile, 'r') as f:
 			upload (valor_tmp)
 		except IOError:
 			print "Could not read line:", line
+		except Exception:			
+			pass
 
 	
