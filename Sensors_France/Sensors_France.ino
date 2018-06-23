@@ -21,7 +21,8 @@
 
 const int num_T = 4;   // Temperature of the culture. Sensor DS18B20.MAX 6
 						// T1_s T1_b
-const int num_DHT22 = 1; //Humidity and temperature ambient sensor. MAX 3
+const int num_DHT = 1; //Humidity and temperature ambient sensor. MAX 3
+#define DHTTYPE DHT22
 const int num_PIR = 1;  //PIR movement sensor. MAX 3
 const int num_DO = 1;   // Optical Density Sensor Module made by OpenSpirulina includes a RGB led + BH1705 lux sensor
 const int option_lux = 2; // 0: No sensor. 1: ldr sensor. 2: lux BH1750
@@ -38,6 +39,9 @@ boolean debug = true;
 #define pin_onewire 0    // where 1-wire is connected
 // Pin lector SD
 #define sd_card_pin 4
+// DHT Pins
+const int DHT_Pins = {7, 8};
+
 
 
 // Global sensors variables
@@ -46,6 +50,8 @@ DallasTemperature sensorDS18B20(&oneWireObjeto);
 LiquidCrystal_I2C lcd(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
 // RTC DS3231 (clock sensor)
 RTC_DS3231 rtc;
+// Array of DHT sensors
+DHT array_DHT[num_DHT];
 
 // File handler to SD
 File myFile;
@@ -121,6 +127,13 @@ void setup() {
   while (!Serial)
   {
     ; // wait for serial port to connect. Needed for native USB port only
+  }
+
+  // Declaring array of DHT22
+  if(num_DHT > 0) {
+    for(int i=0; i < num_DHT; i++) {
+      array_DHT[i](DHT_Pins[i], DHTTYPE);
+    }
   }
 
   // Inicialitza LCD en cas que n'hi haigui
