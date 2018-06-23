@@ -31,16 +31,50 @@ const boolean option_LCD true; // if LCD 20x04 possible (=1) or not (=0)
 const boolean option_SD = true;   //if SD connexion posible (=1) or not (=0)
 const boolean option_clock = true; //if clock posible (=1) or not (=0)
 
+// Debug mode for verbose info on serial monitor
+boolean debug = true;
+
 // Pins
 #define pin_onewire 0    // where 1-wire is connected
+// Pin lector SD
+#define sd_card_pin 4
+
 
 // Global sensors variables
 OneWire oneWireObjeto(pin_onewire);
 DallasTemperature sensorDS18B20(&oneWireObjeto);
 LiquidCrystal_I2C lcd(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
+// RTC DS3231 (clock sensor)
+RTC_DS3231 rtc;
 
+// File handler to SD
+File myFile;
+int fileCount = 0;
+String fileName = "";
 
+// Retorna dia i hora via RTC
+String getDateTime()
+{
+  String hora = "";
+  // En cas que no hi haigui RTC retorna cadena buida
+  if(option_clock) {
+    DateTime now = rtc.now();
+    hora += now.day();
+    hora += '/';
+    hora += now.month();
+    hora += '/';
+    hora += now.year();
+    hora += " ";
+    hora += now.hour();
+    hora += ':';
+    hora += now.minute();
+    hora += ':';
+    hora += now.second();
+  }
+  return hora;
+}
 
+// Captura les temperatures via array de sensors
 void capture_temps(int *array_temperatures){
    // Requests culture temperatures from oneWire Bus
    sensorDS18B20.requestTemperatures();
@@ -88,8 +122,11 @@ void setup() {
   {
     ; // wait for serial port to connect. Needed for native USB port only
   }
+
   // Inicialitza LCD en cas que n'hi haigui
   if(option_LCD) {
+    if (debug)
+      Serial.println(F("Initialization LCD"));
     lcd.begin (20,4);
     lcd.setBacklightPin(3,POSITIVE);
     lcd.setBacklight(HIGH);
@@ -100,8 +137,34 @@ void setup() {
     lcd.print("Sensors OpenSpirulina");
   }
 
+  // Inicialitza SD en cas que n'hi haigui
   if(option_SD) {
+    if (!SD.begin(sd_card_pin))
+    {
+      if (debug)
+        Serial.println(F("Initialization SD failed!"));
+    }
+    else
+    {
+      if (debug)
+        Serial.println(F("Initialization SD done."));
+    }
+  }
 
+  // Inicialitza RTC en cas de disposar
+  if(option_clock) {
+    // Comprobamos si tenemos el RTC conectado
+    if (!rtc.begin())
+    {
+      if (debug)
+        Serial.println(F("No clock working"));
+    }
+
+    // Setting RTC time for first time programing RTC
+    //rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+
+    if (debug)
+      Serial.println(getDateTime());
   }
 
 }
