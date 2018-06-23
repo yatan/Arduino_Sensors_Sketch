@@ -17,8 +17,11 @@
 #include <LiquidCrystal_I2C.h>
 
 
-// Define Number of Sensors
+// Debug mode for verbose info on serial monitor
+const boolean debug = true;
 
+
+// Define Number of Sensors
 const int num_T = 4;   // Temperature of the culture. Sensor DS18B20.MAX 6
 						// T1_s T1_b
 const int num_DHT = 1; //Humidity and temperature ambient sensor. MAX 3
@@ -32,15 +35,16 @@ const boolean option_LCD true; // if LCD 20x04 possible (=1) or not (=0)
 const boolean option_SD = true;   //if SD connexion posible (=1) or not (=0)
 const boolean option_clock = true; //if clock posible (=1) or not (=0)
 
-// Debug mode for verbose info on serial monitor
-boolean debug = true;
 
 // Pins
 #define pin_onewire 0    // where 1-wire is connected
 // Pin lector SD
-#define sd_card_pin 4
+#define pin_sd_card 4
 // DHT Pins
-const int DHT_Pins = {7, 8};
+const int pins_dht = {7, 8};
+// PIR Pins
+const int pins_pir = {20};
+
 
 
 
@@ -94,7 +98,10 @@ void capture_temps(int *array_temperatures){
 
 // Deteccio si hi ha moviment via PIR
 boolean detecta_PIR() {
-
+  for(int i=0; i<num_PIR; i++){
+    if(digitalRead(pins_pir[i]) == HIGH)
+      return false;
+  }
   return true;
 }
 
@@ -132,7 +139,7 @@ void setup() {
   // Declaring array of DHT22
   if(num_DHT > 0) {
     for(int i=0; i < num_DHT; i++) {
-      array_DHT[i](DHT_Pins[i], DHTTYPE);
+      array_DHT[i](pins_dht[i], DHTTYPE);
     }
   }
 
@@ -152,7 +159,7 @@ void setup() {
 
   // Inicialitza SD en cas que n'hi haigui
   if(option_SD) {
-    if (!SD.begin(sd_card_pin))
+    if (!SD.begin(pin_sd_card))
     {
       if (debug)
         Serial.println(F("Initialization SD failed!"));
