@@ -13,7 +13,6 @@
 #include <Wire.h>
 #include <DallasTemperature.h>
 #include <BH1750.h>
-#include <LCD.h>
 #include <LiquidCrystal_I2C.h>
 
 
@@ -30,8 +29,8 @@ const int num_PIR = 1;  //PIR movement sensor. MAX 3
 const int num_DO = 1;   // Optical Density Sensor Module made by OpenSpirulina includes a RGB led + BH1705 lux sensor
 const int option_lux = 2; // 0: No sensor. 1: ldr sensor. 2: lux BH1750
 const int num_pH = 1;   //pH sensor. MAX 3
-const boolean option_internet = modem or ethernet; //if ethernet conexion possible(=1) or not (=0)
-const boolean option_LCD true; // if LCD 20x04 possible (=1) or not (=0)
+const boolean option_internet = true; //modem or ethernet; //if ethernet conexion possible(=1) or not (=0)
+const boolean option_LCD = true; // if LCD 20x04 possible (=1) or not (=0)
 const boolean option_SD = true;   //if SD connexion posible (=1) or not (=0)
 const boolean option_clock = true; //if clock posible (=1) or not (=0)
 
@@ -41,9 +40,9 @@ const boolean option_clock = true; //if clock posible (=1) or not (=0)
 // Pin lector SD
 #define pin_sd_card 4
 // DHT Pins
-const int pins_dht = {7, 8};
+const int pins_dht[num_DHT] = {7};
 // PIR Pins
-const int pins_pir = {20};
+const int pins_pir[num_PIR] = {20};
 
 
 
@@ -51,11 +50,11 @@ const int pins_pir = {20};
 // Global sensors variables
 OneWire oneWireObjeto(pin_onewire);
 DallasTemperature sensorDS18B20(&oneWireObjeto);
-LiquidCrystal_I2C lcd(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
+LiquidCrystal_I2C lcd(0x27, 20, 4);
 // RTC DS3231 (clock sensor)
 RTC_DS3231 rtc;
 // Array of DHT sensors
-DHT array_DHT[num_DHT];
+DHT* array_DHT[num_DHT];
 
 // File handler to SD
 File myFile;
@@ -89,7 +88,7 @@ void capture_temps(int *array_temperatures){
    // Requests culture temperatures from oneWire Bus
    sensorDS18B20.requestTemperatures();
   // Lectura temperatures array
-  for(int i = 0; i < num_temp; i++)
+  for(int i = 0; i < num_T; i++)
   {
     array_temperatures[i] = sensorDS18B20.getTempCByIndex(i);
     delay(10);
@@ -113,12 +112,12 @@ void mostra_LCD() {
 void loop() {
 
   // Definim un array de temperatures amb tamany num_temp sensors assignats, aquesta variable pot ser global
-  int array_temps[num_temp];
+  int array_temps[num_T];
   // Cridem la funció per a la recepció de temperatures enviant la direcció de memòria de la variable del array
   capture_temps(array_temps);
 
   // Exemple sortida dades
-  for(int i = 0; i < num_temp; i++)
+  for(int i = 0; i < num_T; i++)
   {
     Serial.print("Sensor: ");
     Serial.print(i);
@@ -139,7 +138,7 @@ void setup() {
   // Declaring array of DHT22
   if(num_DHT > 0) {
     for(int i=0; i < num_DHT; i++) {
-      array_DHT[i](pins_dht[i], DHTTYPE);
+      array_DHT[i] = new DHT(pins_dht[i], DHTTYPE);
     }
   }
 
@@ -148,7 +147,7 @@ void setup() {
     if (debug)
       Serial.println(F("Initialization LCD"));
     lcd.begin (20,4);
-    lcd.setBacklightPin(3,POSITIVE);
+    lcd.backlight();
     lcd.setBacklight(HIGH);
 
     lcd.home ();                   // go home
