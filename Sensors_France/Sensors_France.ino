@@ -1,20 +1,20 @@
 /*
  * Send Sensors Data To HTTP (PHP) Server
- * 
+ *
  * Autor: Fran Romero https://github.com/yatan
  *        OpenSpirulina http://www.openspirulina.com
- * 
- * Based on: 
+ *
+ * Based on:
  * Ethernet web client sketch:
  *  Repeating Web client
  *  http://www.arduino.cc/en/Tutorial/WebClientRepeating
- *  
+ *
  * DS18B20 sensor de temperatura para líquidos con Arduino:
  *  https://programarfacil.com/blog/arduino-blog/ds18b20-sensor-temperatura-arduino/
- * 
+ *
  * pH
  *  http://scidle.com/es/como-usar-un-sensor-de-ph-con-arduino/
- * 
+ *
  * BH1750: lux sensor to mesure spirulina's biomass concentration.
  *  library:   https://github.com/claws/BH1750
  *
@@ -38,12 +38,12 @@ const boolean debug = true;
 
 
 /*
-  _   _ _    _ __  __ ____  ______ _____     _____ ______ _   _  _____  ____  _____   _____ 
+  _   _ _    _ __  __ ____  ______ _____     _____ ______ _   _  _____  ____  _____   _____
  | \ | | |  | |  \/  |  _ \|  ____|  __ \   / ____|  ____| \ | |/ ____|/ __ \|  __ \ / ____|
- |  \| | |  | | \  / | |_) | |__  | |__) | | (___ | |__  |  \| | (___ | |  | | |__) | (___  
- | . ` | |  | | |\/| |  _ <|  __| |  _  /   \___ \|  __| | . ` |\___ \| |  | |  _  / \___ \ 
+ |  \| | |  | | \  / | |_) | |__  | |__) | | (___ | |__  |  \| | (___ | |  | | |__) | (___
+ | . ` | |  | | |\/| |  _ <|  __| |  _  /   \___ \|  __| | . ` |\___ \| |  | |  _  / \___ \
  | |\  | |__| | |  | | |_) | |____| | \ \   ____) | |____| |\  |____) | |__| | | \ \ ____) |
- |_| \_|\____/|_|  |_|____/|______|_|  \_\ |_____/|______|_| \_|_____/ \____/|_|  \_\_____/ 
+ |_| \_|\____/|_|  |_|____/|______|_|  \_\ |_____/|______|_| \_|_____/ \____/|_|  \_\_____/
  */
 
 const int num_T = 4;   // Temperature of the culture. Sensor DS18B20.MAX 6
@@ -51,22 +51,33 @@ const int num_T = 4;   // Temperature of the culture. Sensor DS18B20.MAX 6
 const int num_DHT = 1; //Humidity and temperature ambient sensor. MAX 3
 #define DHTTYPE DHT22
 const int num_PIR = 1;  //PIR movement sensor. MAX 3
-const int num_DO = 1;   // Optical Density Sensor Module made by OpenSpirulina includes a RGB led + BH1705 lux sensor
-const int option_lux = 2; // 0: No sensor. 1: ldr sensor. 2: lux BH1750
+const int num_DO = 1;   // Optical Density Sensor Module made by OpenSpirulina includes a RGB led + BH1750 lux sensor
 const int num_pH = 1;   //pH sensor. MAX 3
-const boolean option_internet = true; //modem or ethernet; //if ethernet conexion possible(=1) or not (=0)
+enum option_lux_type {  // Valid option_lux_type
+  None,
+  LDR,
+  BH1750
+};
+const option_lux_type option_lux = BH1750; // No sensor | ldr sensor | lux BH1750
+enum option_internet_type { // Valid internet types
+  None,
+  Ethernet,
+  GPRS,
+  Wifi
+};
+const option_internet_type option_internet = Ethernet; // None | Ethernet | GPRS Modem | Wifi <-- Why not ? Dream on it
 const boolean option_LCD = true; // if LCD 20x04 possible (=1) or not (=0)
 const boolean option_SD = true;   //if SD connexion posible (=1) or not (=0)
 const boolean option_clock = true; //if clock posible (=1) or not (=0)
 
 
 /*
-  _____ _____ _   _  _____ 
+  _____ _____ _   _  _____
  |  __ \_   _| \ | |/ ____|
- | |__) || | |  \| | (___  
- |  ___/ | | | . ` |\___ \ 
+ | |__) || | |  \| | (___
+ |  ___/ | | | . ` |\___ \
  | |    _| |_| |\  |____) |
- |_|   |_____|_| \_|_____/                            
+ |_|   |_____|_| \_|_____/
 */
 #define pin_onewire 0    // where 1-wire is connected
 // Pin lector SD
@@ -75,16 +86,19 @@ const boolean option_clock = true; //if clock posible (=1) or not (=0)
 const int pins_dht[num_DHT] = {7};
 // PIR Pins
 const int pins_pir[num_PIR] = {20};
-
+// pH Pins Analog
+const int pins_ph[num_pH] = {1};
+// DO Pins Analog
+const int pins_do[num_DO] = {2};
 
 
 /*
-   _____ _      ____  ____          _       __      __     _____   _____ 
+   _____ _      ____  ____          _       __      __     _____   _____
   / ____| |    / __ \|  _ \   /\   | |      \ \    / /\   |  __ \ / ____|
- | |  __| |   | |  | | |_) | /  \  | |       \ \  / /  \  | |__) | (___  
- | | |_ | |   | |  | |  _ < / /\ \ | |        \ \/ / /\ \ |  _  / \___ \ 
+ | |  __| |   | |  | | |_) | /  \  | |       \ \  / /  \  | |__) | (___
+ | | |_ | |   | |  | |  _ < / /\ \ | |        \ \/ / /\ \ |  _  / \___ \
  | |__| | |___| |__| | |_) / ____ \| |____     \  / ____ \| | \ \ ____) |
-  \_____|______\____/|____/_/    \_\______|     \/_/    \_\_|  \_\_____/ 
+  \_____|______\____/|____/_/    \_\______|     \/_/    \_\_|  \_\_____/
 */
 
 OneWire oneWireObjeto(pin_onewire);
@@ -97,6 +111,10 @@ LiquidCrystal_I2C lcd(0x27, 20, 4);
 RTC_DS3231 rtc;
 // Array of DHT sensors
 DHT* array_DHT[num_DHT];
+// Array of pH sensors
+int array_ph[num_pH];
+// Array of DO sensors
+int array_do[num_DO];
 
 // File handler to SD
 File myFile;
@@ -148,16 +166,15 @@ boolean detecta_PIR() {
 
 void mostra_LCD() {
 
-
 }
 
 /*
-  _      ____   ____  _____  
- | |    / __ \ / __ \|  __ \ 
+  _      ____   ____  _____
+ | |    / __ \ / __ \|  __ \
  | |   | |  | | |  | | |__) |
- | |   | |  | | |  | |  ___/ 
- | |___| |__| | |__| | |     
- |______\____/ \____/|_|     
+ | |   | |  | | |  | |  ___/
+ | |___| |__| | |__| | |
+ |______\____/ \____/|_|
  */
 
 void loop() {
@@ -173,20 +190,57 @@ void loop() {
       Serial.print(i);
       Serial.print(" ");
       Serial.println(array_temps[i]);
-    }    
+    }
   }
+
+  if(num_pH > 0) {
+    capture_ph();
+  }
+
+  if(num_DHT > 0) {
+    capture_dht();
+  }
+
+  if(option_lux != None) {
+    capture_lux();
+  }
+
+  if(num_PIR > 0) {
+    if ( detecta_PIR() == true )
+    {
+        delay(1000);
+        // Esperar i tornar a mirar si hi ha moviment
+    }
+    else
+    {
+      // No hi ha moviment
+    }
+  }
+
+  if(option_internet == ethernet) {
+    send_data();
+  }
+
+  if(option_SD) {
+    save_to_SD();
+  }
+
+  if(option_LCD) {
+    mostra_LCD();
+  }
+
 
   // END Loop()
   delay(2000);
 }
 
 /*
-   _____ ______ _______ _    _ _____  
-  / ____|  ____|__   __| |  | |  __ \ 
+   _____ ______ _______ _    _ _____
+  / ____|  ____|__   __| |  | |  __ \
  | (___ | |__     | |  | |  | | |__) |
-  \___ \|  __|    | |  | |  | |  ___/ 
-  ____) | |____   | |  | |__| | |     
- |_____/|______|  |_|   \____/|_|                                                                            
+  \___ \|  __|    | |  | |  | |  ___/
+  ____) | |____   | |  | |__| | |
+ |_____/|______|  |_|   \____/|_|
 */
 
 void setup() {
