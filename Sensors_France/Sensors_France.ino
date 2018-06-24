@@ -144,13 +144,13 @@ String getDateTime()
 }
 
 // Captura les temperatures via array de sensors
-void capture_temps(int *array_temperatures){
+void capture_temps(){
    // Requests culture temperatures from oneWire Bus
    sensorDS18B20.requestTemperatures();
   // Lectura temperatures array
   for(int i = 0; i < num_T; i++)
   {
-    array_temperatures[i] = sensorDS18B20.getTempCByIndex(i);
+    array_temps[i] = sensorDS18B20.getTempCByIndex(i);
     delay(10);
   }
 }
@@ -165,7 +165,10 @@ boolean detecta_PIR() {
 }
 
 void mostra_LCD() {
-
+  lcd.home ();                   // go home
+  lcd.print("sensors.openspirulina.com");
+  lcd.setCursor ( 0, 1 );        // go to the 2nd line
+  lcd.print("Sensors OpenSpirulina");
 }
 
 /*
@@ -251,6 +254,12 @@ void setup() {
     ; // wait for serial port to connect. Needed for native USB port only
   }
 
+  // Comprovació numero sensors temperatura es parell
+  if( (num_T % 2) != 0 ) {
+    if(debug)
+      Serial.println(F("[ERROR] On number of temperature sensors."));
+  }
+
   // Declaring array of DHT22
   if(num_DHT > 0) {
     for(int i=0; i < num_DHT; i++) {
@@ -265,11 +274,6 @@ void setup() {
     lcd.begin (20,4);
     lcd.backlight();
     lcd.setBacklight(HIGH);
-
-    lcd.home ();                   // go home
-    lcd.print("sensors.openspirulina.com");
-    lcd.setCursor ( 0, 1 );        // go to the 2nd line
-    lcd.print("Sensors OpenSpirulina");
   }
 
   // Inicialitza SD en cas que n'hi haigui
