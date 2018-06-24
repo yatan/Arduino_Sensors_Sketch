@@ -2,6 +2,7 @@
  * Send Sensors Data To HTTP (PHP) Server
  * 
  * Autor: Fran Romero https://github.com/yatan
+ *        OpenSpirulina http://www.openspirulina.com
  * 
  * Based on: 
  * Ethernet web client sketch:

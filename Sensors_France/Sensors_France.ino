@@ -1,5 +1,22 @@
 /*
- * INTRO
+ * Send Sensors Data To HTTP (PHP) Server
+ * 
+ * Autor: Fran Romero https://github.com/yatan
+ *        OpenSpirulina http://www.openspirulina.com
+ * 
+ * Based on: 
+ * Ethernet web client sketch:
+ *  Repeating Web client
+ *  http://www.arduino.cc/en/Tutorial/WebClientRepeating
+ *  
+ * DS18B20 sensor de temperatura para líquidos con Arduino:
+ *  https://programarfacil.com/blog/arduino-blog/ds18b20-sensor-temperatura-arduino/
+ * 
+ * pH
+ *  http://scidle.com/es/como-usar-un-sensor-de-ph-con-arduino/
+ * 
+ * BH1750: lux sensor to mesure spirulina's biomass concentration.
+ *  library:   https://github.com/claws/BH1750
  *
  */
 
