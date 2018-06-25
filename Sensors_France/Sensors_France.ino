@@ -111,6 +111,10 @@ LiquidCrystal_I2C lcd(0x27, 20, 4);
 RTC_DS3231 rtc;
 // Array of DHT sensors
 DHT* array_DHT[num_DHT];
+// Array temperatures of DHT
+float array_DHT_T[num_DHT];
+// Array Humiditys of DHT
+float array_DHT_H[num_DHT];
 // Array of pH sensors
 int array_ph[num_pH];
 // Array of DO sensors
@@ -153,6 +157,11 @@ void capture_temps(){
     array_temps[i] = sensorDS18B20.getTempCByIndex(i);
     delay(10);
   }
+}
+
+// Captura les dades temperatures/humitat dels DHT
+void capture_dht() {
+
 }
 
 // Deteccio si hi ha moviment via PIR
@@ -254,16 +263,23 @@ void setup() {
     ; // wait for serial port to connect. Needed for native USB port only
   }
 
-  // Comprovació numero sensors temperatura es parell
+  // Comprovació que el numero sensors de temperatura sigui parell
   if( (num_T % 2) != 0 ) {
-    if(debug)
-      Serial.println(F("[ERROR] On number of temperature sensors."));
+    // if(debug) // Mostrar sempre el error per Serial
+    Serial.println(F("[ERROR] On number of temperature sensors."));
   }
 
   // Declaring array of DHT22
   if(num_DHT > 0) {
     for(int i=0; i < num_DHT; i++) {
       array_DHT[i] = new DHT(pins_dht[i], DHTTYPE);
+      // Init DHT
+      if(debug) {
+        Serial.print("Initializing DHT Sensor ");
+        Serial.print(i);
+        Serial.println(" ...");
+      }
+      array_DHT[i].begin();
     }
   }
 
@@ -301,7 +317,8 @@ void setup() {
 
     // Setting RTC time for first time programing RTC
     //rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-
+    
+    // Print current time
     if (debug)
       Serial.println(getDateTime());
   }
