@@ -54,18 +54,18 @@ const int num_PIR = 1;  //PIR movement sensor. MAX 3
 const int num_DO = 1;   // Optical Density Sensor Module made by OpenSpirulina includes a RGB led + BH1750 lux sensor
 const int num_pH = 1;   //pH sensor. MAX 3
 enum option_lux_type {  // Valid option_lux_type
-  None,
-  LDR,
-  BH1750
+  lux_none,
+  lux_ldr,
+  lux_BH1750
 };
-const option_lux_type option_lux = BH1750; // No sensor | ldr sensor | lux BH1750
+const option_lux_type option_lux = lux_BH1750; // No sensor | ldr sensor | lux BH1750
 enum option_internet_type { // Valid internet types
-  None,
-  Ethernet,
-  GPRS,
-  Wifi
+  internet_none,
+  internet_ethernet,
+  internet_gprs,
+  internet_wifi
 };
-const option_internet_type option_internet = Ethernet; // None | Ethernet | GPRS Modem | Wifi <-- Why not ? Dream on it
+const option_internet_type option_internet = internet_ethernet; // None | Ethernet | GPRS Modem | Wifi <-- Why not ? Dream on it
 const boolean option_LCD = true; // if LCD 20x04 possible (=1) or not (=0)
 const boolean option_SD = true;   //if SD connexion posible (=1) or not (=0)
 const boolean option_clock = true; //if clock posible (=1) or not (=0)
@@ -172,9 +172,9 @@ void capture_temps(){
 void capture_dht() {
   for(int i=0; i<num_DHT; i++) {
     // Read Temperature
-    array_DHT_T[i] = array_DHT[i].readTemperature();
+    array_DHT_T[i] = array_DHT[i]->readTemperature();
     // Read Humidity
-    array_DHT_H[i] = array_DHT[i].readHumidity();
+    array_DHT_H[i] = array_DHT[i]->readHumidity();
   }
 }
 
@@ -241,7 +241,7 @@ void write_SD_Headers() {
   }
 }
 
-void write_SD() {
+void save_to_SD() {
   // Writing results to file
   myFile = SD.open(fileName, FILE_WRITE);
 
@@ -270,7 +270,7 @@ void write_SD() {
 
     //Lux sensor
     myFile.print('#');
-    myFile.println(lux_sensor1);
+    //myFile.println(lux_sensor1);
     
     // close the file:
     myFile.close();
@@ -303,15 +303,15 @@ void loop() {
   }
 
   if(num_pH > 0) {
-    capture_ph();
+    //capture_ph();
   }
 
   if(num_DHT > 0) {
     capture_dht();
   }
 
-  if(option_lux != None) {
-    capture_lux();
+  if(option_lux != lux_none) {
+    //capture_lux();
   }
 
   if(num_PIR > 0) {
@@ -326,8 +326,8 @@ void loop() {
     }
   }
 
-  if(option_internet == ethernet) {
-    send_data();
+  if(option_internet == internet_ethernet) {
+    //send_data();
   }
 
   if(option_SD) {
@@ -376,7 +376,7 @@ void setup() {
         Serial.print(i);
         Serial.println(" ...");
       }
-      array_DHT[i].begin();
+      array_DHT[i]->begin();
     }
   }
 
