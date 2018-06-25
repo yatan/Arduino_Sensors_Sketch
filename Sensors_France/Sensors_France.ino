@@ -216,6 +216,7 @@ void write_SD_Headers() {
   // if the file opened okay, write to it:
   if (myFile)
   {
+    // If Have RTC
     if(option_clock)
       myFile.print(F("DateTime#"));
     // Sensor_1#......#Sensor_n#
@@ -254,30 +255,18 @@ void write_SD() {
     if(option_clock)
       myFile.print(getDateTime());
     
-    //Temperatures del cultiu 
-    //Sensor Temperatura 1
-    myFile.print('#');
-    myFile.print(array_temp1);
-    //Sensor Temperatura 2
-    myFile.print('#');
-    myFile.print(array_temp2);
-    //Sensor Temperatura 3
-    myFile.print('#');
-    myFile.print(array_temp3);
-    
-    //Sensor Temperatura Ambient 1
-    myFile.print('#');
-    myFile.print(ambient1_temp);
-    //Sensor Temperatura Ambient 2
-    myFile.print('#');
-    myFile.println(ambient2_temp);      
-
-    //Sensor Humetat Ambient 1
-    myFile.print('#');
-    myFile.print(ambient1_humetat);
-    //Sensor Humetat Ambient 2
-    myFile.print('#');
-    myFile.print(ambient2_humetat);     
+    // Temperatures del cultiu Sensors_T
+    for(int i=0; i<num_T; i++) {
+      myFile.print(array_temps[i]);
+      myFile.print(F("#"));
+    }
+    // Sensors DHT
+    for(int i=0; i<num_DHT; i++) {
+      myFile.print(F("#"));
+      myFile.print(array_DHT_T[i]);
+      myFile.print(F("#"));      
+      myFile.print(array_DHT_H[i]);
+    }      
 
     //Lux sensor
     myFile.print('#');
@@ -310,16 +299,7 @@ void loop() {
 
   // Si tenim sondes de temperatura
   if(num_T > 0) {
-    // Cridem la funció per a la recepció de temperatures enviant la direcció de memòria de la variable del array
-    capture_temps(array_temps);
-    // Exemple sortida dades
-    for(int i = 0; i < num_T; i++)
-    {
-      Serial.print("Sensor: ");
-      Serial.print(i);
-      Serial.print(" ");
-      Serial.println(array_temps[i]);
-    }
+    capture_temps();
   }
 
   if(num_pH > 0) {
