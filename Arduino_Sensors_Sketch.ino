@@ -13,7 +13,7 @@
  *  https://programarfacil.com/blog/arduino-blog/ds18b20-sensor-temperatura-arduino/
  *
  * pH
- *  http://scidle.com/es/como-usar-un-sensor-de-ph-con-arduino/
+ *  phMeterSample.ino from: YouYou
  *
  * BH1750: lux sensor to mesure spirulina's biomass concentration.
  *  library:   https://github.com/claws/BH1750
@@ -46,13 +46,13 @@ const boolean debug = true;
  |_| \_|\____/|_|  |_|____/|______|_|  \_\ |_____/|______|_| \_|_____/ \____/|_|  \_\_____/
  */
 
-const int num_T = 4;   // Temperature of the culture. Sensor DS18B20.MAX 6
-						// T1_s T1_b
-const int num_DHT = 1; //Humidity and temperature ambient sensor. MAX 3
-#define DHTTYPE DHT22
-const int num_PIR = 1;  //PIR movement sensor. MAX 3
+const int num_T = 4;    // Temperature of the culture. Sensor DS18B20.MAX 6
+						            // T1_s T1_b
+const int num_DHT = 1;  // Humidity and temperature ambient sensor. MAX 3
+#define DHTTYPE DHT22   // Type of DHT sensor DHT11 - DHT22
+const int num_PIR = 1;  // PIR movement sensor. MAX 3
 const int num_DO = 1;   // Optical Density Sensor Module made by OpenSpirulina includes a RGB led + BH1750 lux sensor
-const int num_pH = 1;   //pH sensor. MAX 3
+const int num_pH = 1;   // pH sensor. MAX 3
 enum option_lux_type {  // Valid option_lux_type
   lux_none,
   lux_ldr,
@@ -70,7 +70,6 @@ const boolean option_LCD = true; // if LCD 20x04 possible (=1) or not (=0)
 const boolean option_SD = true;   //if SD connexion posible (=1) or not (=0)
 const boolean option_clock = true; //if clock posible (=1) or not (=0)
 
-
 /*
   _____ _____ _   _  _____
  |  __ \_   _| \ | |/ ____|
@@ -79,18 +78,13 @@ const boolean option_clock = true; //if clock posible (=1) or not (=0)
  | |    _| |_| |\  |____) |
  |_|   |_____|_| \_|_____/
 */
-#define pin_onewire 0    // where 1-wire is connected
-// Pin lector SD
-#define pin_sd_card 4
-// DHT Pins
-const int pins_dht[num_DHT] = {7};
-// PIR Pins
-const int pins_pir[num_PIR] = {20};
-// pH Pins Analog
-const int pins_ph[num_pH] = {1};
-// DO Pins Analog
-const int pins_do[num_DO] = {2};
 
+#define pin_onewire 0                 // where 1-wire is connected
+#define pin_sd_card 4                 // Pin lector SD
+const int pins_dht[num_DHT] = {7};    // DHT Pins
+const int pins_pir[num_PIR] = {20};   // PIR Pins
+const int pins_ph[num_pH] = {1};      // pH Pins (Analog)
+const int pins_do[num_DO] = {2};      // DO Pins (Analog)
 
 /*
    _____ _      ____  ____          _       __      __     _____   _____
@@ -178,6 +172,38 @@ void capture_dht() {
   }
 }
 
+float capture_ph(int SensorPin) {
+  unsigned long int avgValue;  //Store the average value of the sensor feedback
+  float b;
+  int buf[10],temp;
+  for(int i=0;i<10;i++)       //Get 10 sample value from the sensor for smooth the value
+  { 
+    buf[i]=analogRead(SensorPin);
+    delay(10);
+  }
+  for(int i=0;i<9;i++)        //sort the analog from small to large
+  {
+    for(int j=i+1;j<10;j++)
+    {
+      if(buf[i]>buf[j])
+      {
+        temp=buf[i];
+        buf[i]=buf[j];
+        buf[j]=temp;
+      }
+    }
+  }
+  avgValue=0;
+  for(int i=2;i<8;i++)                      //take the average value of 6 center sample
+    avgValue+=buf[i];
+  float phValue=(float)avgValue*5.0/1024/6; //convert the analog into millivolt
+  phValue=3.5*phValue;                      //convert the millivolt into pH value
+  
+  // Return phValue for that SensorPin
+  return phValue;
+}
+
+
 // Deteccio si hi ha moviment via PIR
 boolean detecta_PIR() {
   for(int i=0; i<num_PIR; i++){
@@ -187,6 +213,7 @@ boolean detecta_PIR() {
   return true;
 }
 
+// Mostra per LCD les dades
 void mostra_LCD() {
   lcd.home ();                   // go home
   lcd.print("sensors.openspirulina.com");
@@ -194,6 +221,7 @@ void mostra_LCD() {
   lcd.print("Sensors OpenSpirulina");
 }
 
+// Inicialitza el nom del fitxer a escriure
 void init_SD_FileName() {
   // Obtain a free file name for writting to SD
   fileName += fileCount;
@@ -210,8 +238,8 @@ void init_SD_FileName() {
     Serial.println("Writing in file: " + fileName);
 }
 
+// Writing title headers to file
 void write_SD_Headers() {
-  // Writing title headers to file
   myFile = SD.open(fileName, FILE_WRITE);
   // if the file opened okay, write to it:
   if (myFile)
@@ -301,9 +329,10 @@ void loop() {
   if(num_T > 0) {
     capture_temps();
   }
-
-  if(num_pH > 0) {
-    //capture_ph();
+  
+  // Capture PH for each pH Sensor
+  for(int i=0; i<num_pH; i++) {
+    capture_ph(pins_ph[i]);
   }
 
   if(num_DHT > 0) {
