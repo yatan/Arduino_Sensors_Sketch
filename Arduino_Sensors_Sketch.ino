@@ -395,6 +395,17 @@ void setup() {
     Serial.println(F("[ERROR] On number of temperature sensors."));
   }
 
+  // If have DS18B20 Sensors, init them
+  if(num_T > 0) {
+    if (debug)
+      Serial.println(F("Initializing DS18B20 BUS..."));
+    sensorDS18B20.begin();
+    // Verify number of detected devices
+    if(sensorDS18B20.getDeviceCount() != num_T) {
+      Serial.println(F("[Error] Incorrect number DS18B20 Devices Detected !"));
+    }
+  }
+
   // Declaring array of DHT22
   if(num_DHT > 0) {
     for(int i=0; i < num_DHT; i++) {
