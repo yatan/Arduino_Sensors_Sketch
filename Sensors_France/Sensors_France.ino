@@ -125,6 +125,15 @@ File myFile;
 int fileCount = 0;
 String fileName = "";
 
+/*
+  ______ _    _ _   _  _____ _______ _____ ____  _   _  _____  
+ |  ____| |  | | \ | |/ ____|__   __|_   _/ __ \| \ | |/ ____| 
+ | |__  | |  | |  \| | |       | |    | || |  | |  \| | (___   
+ |  __| | |  | | . ` | |       | |    | || |  | | . ` |\___ \  
+ | |    | |__| | |\  | |____   | |   _| || |__| | |\  |____) | 
+ |_|     \____/|_| \_|\_____|  |_|  |_____\____/|_| \_|_____/  
+ */
+
 // Retorna dia i hora via RTC
 String getDateTime()
 {
@@ -151,7 +160,7 @@ String getDateTime()
 void capture_temps(){
    // Requests culture temperatures from oneWire Bus
    sensorDS18B20.requestTemperatures();
-  // Lectura temperatures array
+  // Read temperatures array
   for(int i = 0; i < num_T; i++)
   {
     array_temps[i] = sensorDS18B20.getTempCByIndex(i);
@@ -161,7 +170,12 @@ void capture_temps(){
 
 // Captura les dades temperatures/humitat dels DHT
 void capture_dht() {
-
+  for(int i=0; i<num_DHT; i++) {
+    // Read Temperature
+    array_DHT_T[i] = array_DHT[i].readTemperature();
+    // Read Humidity
+    array_DHT_H[i] = array_DHT[i].readHumidity();
+  }
 }
 
 // Deteccio si hi ha moviment via PIR
@@ -178,6 +192,109 @@ void mostra_LCD() {
   lcd.print("sensors.openspirulina.com");
   lcd.setCursor ( 0, 1 );        // go to the 2nd line
   lcd.print("Sensors OpenSpirulina");
+}
+
+void init_SD_FileName() {
+  // Obtain a free file name for writting to SD
+  fileName += fileCount;
+  fileName += ".txt";
+  while (SD.exists(fileName))
+  {
+    fileCount += 1;
+    fileName = "";
+    fileName += fileCount;
+    fileName += ".txt";
+  }
+
+  if (debug)
+    Serial.println("Writing in file: " + fileName);
+}
+
+void write_SD_Headers() {
+  // Writing title headers to file
+  myFile = SD.open(fileName, FILE_WRITE);
+  // if the file opened okay, write to it:
+  if (myFile)
+  {
+    if(option_clock)
+      myFile.print(F("DateTime#"));
+    // Sensor_1#......#Sensor_n#
+    for(int i=0; i<num_T; i++) {
+      myFile.print(F("sensor_"));
+      myFile.print(i);
+      myFile.print(F("#"));
+    }
+    // ambient1_temp#ambient1_humetat#
+    for(int i=0; i<num_DHT; i++) {
+      myFile.print(F("ambient_"));
+      myFile.print(i);
+      myFile.print(F("_temp#"));
+      myFile.print(F("ambient_"));  
+      myFile.print(i);
+      myFile.print(F("_humetat#"));      
+    }
+    
+    myFile.println(F("lux#"));    
+    // close the file:
+    myFile.close();
+  }
+}
+
+void write_SD() {
+  // Writing results to file
+  myFile = SD.open(fileName, FILE_WRITE);
+
+  // if the file opened okay, write on it:
+  if (myFile)
+  {
+    if (debug)
+      Serial.println("Writing to: " + fileName);
+
+    //DateTime if have RTC
+    if(option_clock)
+      myFile.print(getDateTime());
+    
+    //Temperatures del cultiu 
+    //Sensor Temperatura 1
+    myFile.print('#');
+    myFile.print(array_temp1);
+    //Sensor Temperatura 2
+    myFile.print('#');
+    myFile.print(array_temp2);
+    //Sensor Temperatura 3
+    myFile.print('#');
+    myFile.print(array_temp3);
+    
+    //Sensor Temperatura Ambient 1
+    myFile.print('#');
+    myFile.print(ambient1_temp);
+    //Sensor Temperatura Ambient 2
+    myFile.print('#');
+    myFile.println(ambient2_temp);      
+
+    //Sensor Humetat Ambient 1
+    myFile.print('#');
+    myFile.print(ambient1_humetat);
+    //Sensor Humetat Ambient 2
+    myFile.print('#');
+    myFile.print(ambient2_humetat);     
+
+    //Lux sensor
+    myFile.print('#');
+    myFile.println(lux_sensor1);
+    
+    // close the file:
+    myFile.close();
+
+    if (debug)
+      Serial.println(F("Writting SD done."));
+  }
+  else
+  {
+    // if the file didn't open, print an error:
+    if (debug)
+      Serial.println("Error opening: " + fileName);
+  }
 }
 
 /*
@@ -303,6 +420,10 @@ void setup() {
     {
       if (debug)
         Serial.println(F("Initialization SD done."));
+      // Generate fileName to write
+      init_SD_FileName();
+      // Write File headers
+      write_SD_Headers();
     }
   }
 
@@ -314,13 +435,15 @@ void setup() {
       if (debug)
         Serial.println(F("No clock working"));
     }
+    else
+    {
+      // RTC Work - Print current time
+      if (debug)
+        Serial.println(getDateTime());
+    }
 
     // Setting RTC time for first time programing RTC
     //rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-    
-    // Print current time
-    if (debug)
-      Serial.println(getDateTime());
   }
 
 }
