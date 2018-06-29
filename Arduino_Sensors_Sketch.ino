@@ -26,6 +26,8 @@
 #define TINY_GSM_RX_BUFFER 512
 // Set serial for debug console (to the Serial Monitor, speed 115200)
 #define SerialMon Serial
+// Uncomment this if you want to see all AT commands
+#define DUMP_AT_COMMANDS
 
 // Includes
 #include <SD.h>
@@ -38,14 +40,27 @@
 #include <BH1750.h>
 #include <LiquidCrystal_I2C.h>
 #include <TinyGsmClient.h>
-#include <StreamDebugger.h>
 
 
 // Debug mode for verbose info on serial monitor
 const boolean debug = true;
 
+/*****
+AUTHENTICATION ARDUINO
+*****/
+//Define de identity of Arduino
+const int id_arduino = 1;
+
+/****
+NETWORK SETTINGS 
+****/
+
+// Server connect for sending data
 const char server[] = "sensors.openspirulina.com";
 const int  port = 80;
+// assign a MAC address for the ethernet controller:
+byte mac[] = {
+    0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED};
 
 // Your GPRS credentials
 // Leave empty, if missing user or pass
@@ -82,7 +97,7 @@ enum option_internet_type { // Valid internet types
   internet_gprs,
   internet_wifi
 };
-const option_internet_type option_internet = internet_ethernet; // None | Ethernet | GPRS Modem | Wifi <-- Why not ? Dream on it
+const option_internet_type option_internet = internet_gprs; // None | Ethernet | GPRS Modem | Wifi <-- Why not ? Dream on it
 const boolean option_LCD = true; // if LCD 20x04 possible (=1) or not (=0)
 const boolean option_SD = true;   //if SD connexion posible (=1) or not (=0)
 const boolean option_clock = true; //if clock posible (=1) or not (=0)
@@ -118,7 +133,8 @@ DallasTemperature sensorDS18B20(&oneWireObjeto);
 // Array de temperatures amb tamany num_temp sensors assignats
 int array_temps[num_T];
 // LCD I2C
-LiquidCrystal_I2C lcd(0x27, 20, 4);
+#define I2C_ADDR    0x27
+LiquidCrystal_I2C lcd(I2C_ADDR, 20, 4);
 // RTC DS3231 (clock sensor)
 RTC_DS3231 rtc;
 // Array of DHT sensors
@@ -133,8 +149,15 @@ int array_ph[num_pH];
 int array_do[num_DO];
 
 // GPRS Modem
-StreamDebugger debugger(SerialAT, SerialMon);
-TinyGsm modem(debugger);
+
+#ifdef DUMP_AT_COMMANDS
+  #include <StreamDebugger.h>
+  StreamDebugger debugger(SerialAT, SerialMon);
+  TinyGsm modem(debugger);
+#else
+  TinyGsm modem(SerialAT);
+#endif
+
 TinyGsmClient client(modem);
 
 // File handler to SD
@@ -238,10 +261,15 @@ boolean detecta_PIR() {
 
 // Mostra per LCD les dades
 void mostra_LCD() {
-  lcd.home ();                   // go home
-  lcd.print("sensors.openspirulina.com");
-  lcd.setCursor ( 0, 1 );        // go to the 2nd line
-  lcd.print("Sensors OpenSpirulina");
+  lcd.clear();                  // Clear screen
+  lcd.home ();                  // go home
+  lcd.print("T1: 12,3 T2: 45,6");
+  lcd.setCursor ( 0, 1 );       // go to the 2nd line
+  lcd.print("pH1: 11,3 pH2: 11,4");
+  lcd.setCursor ( 0, 2 );       // go to the 3rd line
+  lcd.print("LAST: ");
+  lcd.setCursor ( 0, 3 );       // go to the 4th line
+  lcd.print("OpenSpirulina");
 }
 
 // Inicialitza el nom del fitxer a escriure
@@ -333,7 +361,7 @@ void save_to_SD() {
   {
     // if the file didn't open, print an error:
     if (debug)
-      Serial.println("Error opening: " + fileName);
+      Serial.println("Error opening SD file: " + fileName);
   }
 }
 
@@ -348,7 +376,7 @@ void send_data_server() {
   // Append temperatures
   for( int i=0; i<num_T; i++){
     cadena += "&temp";
-    cadena += i;
+    cadena += i+1;
     cadena += "=";
     cadena += array_temps[i];
   }
@@ -356,11 +384,11 @@ void send_data_server() {
   // Append Ambient temperatures and Humidity
   for( int i=0; i<num_DHT; i++) {
     cadena += "&ta";
-    cadena += i;
+    cadena += i+1;
     cadena += "=";
     cadena += array_DHT_T[i];
-    cadena += "&th";
-    cadena += i;
+    cadena += "&ha";
+    cadena += i+1;
     cadena += "=";
     cadena += array_DHT_H[i];    
   }
@@ -376,7 +404,7 @@ void send_data_server() {
   cadena += "&ldr4=";
   cadena += lux_sensor4;
   */
-  
+  /*
   // Append LDR Laser Sensors
   cadena += "&irradiancia1=";
   cadena += ir1;    
@@ -388,9 +416,11 @@ void send_data_server() {
   cadena += ir20;  
   //cadena += "&laser3=";
   //cadena += laser_sensor3;  
-
-  if(debug)
+*/
+  if(debug) {
+    Serial.print("Server petition: ");
     Serial.println(cadena);
+  }
 
   // Send data to specific hardware
   if(option_internet == internet_ethernet) {
@@ -409,7 +439,46 @@ void send_data_ethernet(String cadena) {
 }
 
 void send_data_modem(String cadena) {
+  
+  SerialMon.print("Waiting for network...");
+  if (!modem.waitForNetwork()) {
+    SerialMon.println(F(" [fail]"));
+    SerialMon.println(F("************************"));
+    SerialMon.println(F(" Is your sim card locked?"));
+    SerialMon.println(F(" Do you have a good signal?"));
+    SerialMon.println(F(" Is antenna attached?"));
+    SerialMon.println(F(" Does the SIM card work with your phone?"));
+    SerialMon.println(F("************************"));
+    delay(10000);
+    return;
+  }
+  SerialMon.println(F(" [OK]"));
 
+  SerialMon.print("Connecting to ");
+  SerialMon.print(apn);
+  if (!modem.gprsConnect(apn, user, pass)) {
+    SerialMon.println(F(" [fail]"));
+    SerialMon.println(F("************************"));
+    SerialMon.println(F(" Is GPRS enabled by network provider?"));
+    SerialMon.println(F(" Try checking your card balance."));
+    SerialMon.println(F("************************"));
+    delay(10000);
+    return;
+  }
+  SerialMon.println(F(" [OK]"));
+
+  IPAddress local = modem.localIP();
+  SerialMon.print("Local IP: ");
+  SerialMon.println(local);
+
+  SerialMon.print(F("Connecting to "));
+  SerialMon.print(server);
+  if (!client.connect(server, port)) {
+    SerialMon.println(F(" [fail]"));
+    delay(10000);
+    return;
+  }
+  SerialMon.println(F(" [OK]"));
 }
 
 /*
@@ -522,9 +591,14 @@ void setup() {
   if(option_LCD) {
     if (debug)
       Serial.println(F("Initialization LCD"));
+    lcd.init();
     lcd.begin (20,4);
     lcd.backlight();
     lcd.setBacklight(HIGH);
+    lcd.home ();                   // go home
+    lcd.print("OpenSpirulina");
+    lcd.setCursor ( 0, 2 );        // go to the 2nd line
+    lcd.print("LOADING...");
   }
 
   // Inicialitza SD en cas que n'hi haigui
@@ -544,6 +618,26 @@ void setup() {
       write_SD_Headers();
     }
   }
+
+  // Inicialitza RTC en cas de disposar
+  if(option_clock) {
+    if (debug)
+        Serial.println(F("Init RTC Clock"));
+    // Comprobamos si tenemos el RTC conectado
+    if (!rtc.begin())
+    {
+      if (debug)
+        Serial.println(F("No clock working"));
+    }
+    else
+    {
+      // RTC Work - Print current time
+      if (debug)
+        Serial.println(getDateTime());
+    }
+    // Setting RTC time for first time programing RTC
+    //rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+  }  
 
   // Initialize Ethernet shield
   if(option_internet == internet_ethernet) {
@@ -567,30 +661,19 @@ void setup() {
     delay(3000);
     if (debug)
       SerialMon.print("Initializing modem...");
-    if (!modem.init()) {
-      SerialMon.println(F(" [fail]"));
+    if (!modem.restart()) {
+      SerialMon.println(F("Modem init [fail]"));
       delay(5000);
-      return;
     }
-    if (debug)
-      SerialMon.println(F(" [OK]"));    
-  }
-
-  // Inicialitza RTC en cas de disposar
-  if(option_clock) {
-    // Comprobamos si tenemos el RTC conectado
-    if (!rtc.begin())
-    {
-      if (debug)
-        Serial.println(F("No clock working"));
+    else {
+      if (debug) {
+        SerialMon.println(F("Modem init [OK]"));    
+        String modemInfo = modem.getModemInfo();
+        SerialMon.print(F("Modem: "));
+        SerialMon.println(modemInfo);
+      }
+      // Unlock your SIM card with a PIN
+      //modem.simUnlock("1234");    
     }
-    else
-    {
-      // RTC Work - Print current time
-      if (debug)
-        Serial.println(getDateTime());
-    }
-    // Setting RTC time for first time programing RTC
-    //rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
   }
 }
