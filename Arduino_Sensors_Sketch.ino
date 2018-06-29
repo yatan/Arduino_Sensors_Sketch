@@ -530,30 +530,20 @@ void send_data_modem(String cadena) {
   
   SerialMon.print("Waiting for network...");
   if (!modem.waitForNetwork()) {
-    SerialMon.println(F(" [fail]"));
-    SerialMon.println(F("************************"));
-    SerialMon.println(F(" Is your sim card locked?"));
-    SerialMon.println(F(" Do you have a good signal?"));
-    SerialMon.println(F(" Is antenna attached?"));
-    SerialMon.println(F(" Does the SIM card work with your phone?"));
-    SerialMon.println(F("************************"));
+    SerialMon.println(F("Network [fail]"));
     delay(10000);
     return;
   }
-  SerialMon.println(F(" [OK]"));
+  SerialMon.println(F("Network [OK]"));
 
   SerialMon.print("Connecting to ");
   SerialMon.print(apn);
   if (!modem.gprsConnect(apn, user, pass)) {
-    SerialMon.println(F(" [fail]"));
-    SerialMon.println(F("************************"));
-    SerialMon.println(F(" Is GPRS enabled by network provider?"));
-    SerialMon.println(F(" Try checking your card balance."));
-    SerialMon.println(F("************************"));
+    SerialMon.println(F("GRPS [fail]"));
     delay(10000);
     return;
   }
-  SerialMon.println(F(" [OK]"));
+  SerialMon.println(F("GPRS [OK]"));
 
   IPAddress local = modem.localIP();
   SerialMon.print("Local IP: ");
@@ -562,11 +552,11 @@ void send_data_modem(String cadena) {
   SerialMon.print(F("Connecting to "));
   SerialMon.print(server);
   if (!client.connect(server, port)) {
-    SerialMon.println(F(" [fail]"));
+    SerialMon.println(F("Server [fail]"));
     delay(10000);
     return;
   }
-  SerialMon.println(F(" [OK]"));
+  SerialMon.println(F("Server [OK]"));
 }
 
 /*
@@ -601,12 +591,10 @@ void loop() {
   if(num_PIR > 0) {
     if ( detecta_PIR() == true )
     {
-        delay(1000);
-        // Esperar i tornar a mirar si hi ha moviment
+        delay(1000);        // Esperar i tornar a mirar si hi ha moviment
         if ( detecta_PIR() == true )
         {
-          // Continua amb moviment, mesurar DO
-          capture_DO();
+          capture_DO();     // Continua existint moviment per tant mesurar DO
         }
     }
     else
@@ -629,7 +617,7 @@ void loop() {
 
 
   // END Loop()
-  delay(2000);
+  delay(10000);
 }
 
 /*
