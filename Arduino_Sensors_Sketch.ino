@@ -314,6 +314,78 @@ void save_to_SD() {
   }
 }
 
+void send_data_server() {
+
+  String cadena = "GET /afegir.php?";
+
+  // Append temperatures
+  for( int i=0; i<num_T; i++){
+    if(i>0)
+      cadena += "&";
+    cadena += "temp";
+    cadena += i;
+    cadena += "=";
+    cadena += array_temps[i];
+  }
+
+  // Append Ambient temperatures
+  cadena += "&ta1=";
+  cadena += ambient1;
+  // Append Ambient Humidity
+  cadena += "&th1=";
+  cadena += humetat; 
+  
+  /*
+  // Append LDR sensors
+  cadena += "&ldr1=";
+  cadena += lux_sensor1;
+  cadena += "&ldr2=";
+  cadena += lux_sensor2;
+  cadena += "&ldr3=";
+  cadena += lux_sensor3;
+  cadena += "&ldr4=";
+  cadena += lux_sensor4;
+  */
+  
+  // Append LDR Laser Sensors
+  cadena += "&irradiancia1=";
+  cadena += ir1;    
+  cadena += "&irradiancia1_0=";
+  cadena += ir10;  
+  cadena += "&irradiancia2=";
+  cadena += ir2;    
+  cadena += "&irradiancia2_0=";
+  cadena += ir20;  
+  //cadena += "&laser3=";
+  //cadena += laser_sensor3;  
+  
+  // Append our ID Arduino
+  cadena += "&idarduino=";
+  cadena += id_arduino;
+
+  if(debug)
+    Serial.println(cadena);
+
+  // Send data to specific hardware
+  if(option_internet == internet_ethernet) {
+    // Add end of GET petition for Ethernet and send
+    cadena += " HTTP/1.1";
+    send_data_ethernet(cadena);
+  }
+  else if(option_internet == internet_gprs) {
+    // Send petition to GPRS Modem
+    send_data_modem(cadena);
+  }
+}
+
+void send_data_ethernet(String cadena) {
+
+}
+
+void send_data_modem(String cadena) {
+
+}
+
 /*
   _      ____   ____  _____
  | |    / __ \ / __ \|  __ \
@@ -355,8 +427,8 @@ void loop() {
     }
   }
 
-  if(option_internet == internet_ethernet) {
-    //send_data();
+  if(option_internet != internet_none) {
+    send_data_server();
   }
 
   if(option_SD) {
