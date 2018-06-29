@@ -59,7 +59,7 @@ NETWORK SETTINGS
 const char server[] = "sensors.openspirulina.com";
 const int  port = 80;
 // assign a MAC address for the ethernet controller:
-byte mac[] = {
+const byte mac[] = {
     0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED};
 
 // Your GPRS credentials
@@ -148,8 +148,8 @@ float array_DHT_T[num_DHT];
 float array_DHT_H[num_DHT];
 // Array of pH sensors
 int array_ph[num_pH];
-// Array of DO sensors
-int array_do[num_DO];
+// Array of DO sensors [R,G,B,RGB]
+int array_do1[4];
 BH1750 ir_led1(0x23);    //Si el ADDR està inactiu
 // BH1750 ir_led2(0x5C); //Si el ADDR està amb més de 0.7V
 
@@ -267,25 +267,24 @@ boolean detecta_PIR() {
 
 float R1_led()
 {
-  digitalWrite(R1_pin, HIGH);
+  digitalWrite(pins_rgb[0], HIGH);
   // Llegim valors amb el led obert
   delay(wait_opening_led);
-  float iir1=0;
+  float iir1[samples_number];
   float iir=0;
   for (int i=0; i<samples_number; i++) 
   {
-    iir1 = ir_led1.readLightLevel();
-    iir = iir1 + iir;
+    iir1[i] = ir_led1.readLightLevel();
+    iir = iir1[i] + iir;
     delay(500);
   }
-  digitalWrite(R1_pin, LOW);
-  iR1=  iir / samples_number;
-  return iR1;
+  digitalWrite(pins_rgb[0], LOW);
+  return (float)iir / samples_number;
 }
 
 float G1_led()
 {
-  digitalWrite(G1_pin, HIGH);
+  digitalWrite(pins_rgb[1], HIGH);
   float iir1=0;
   float iir=0;
   delay(wait_opening_led);
@@ -295,7 +294,7 @@ float G1_led()
     iir = iir1 + iir;
     delay(500);
   }
-  digitalWrite(G1_pin, LOW);
+  digitalWrite(pins_rgb[1], LOW);
   return (float)iir / samples_number;
 }
 
@@ -303,7 +302,7 @@ float G1_led()
 
 float B1_led()
 {
-  digitalWrite(B1_pin, HIGH);
+  digitalWrite(pins_rgb[2], HIGH);
   // Llegim valors amb el led obert
   delay(wait_opening_led);
   float iir1=0;
@@ -314,16 +313,16 @@ float B1_led()
     iir = iir1 + iir;
     delay(500);
   }
-  digitalWrite(B1_pin, LOW);
+  digitalWrite(pins_rgb[2], LOW);
   return (float)iir / samples_number;
 }
 
 
 float RGB1_led()
 {
-  digitalWrite(R1_pin, HIGH);
-  digitalWrite(G1_pin, HIGH);
-  digitalWrite(B1_pin, HIGH);
+  digitalWrite(pins_rgb[0], HIGH);
+  digitalWrite(pins_rgb[1], HIGH);
+  digitalWrite(pins_rgb[2], HIGH);
   // Llegim valors amb el led obert
   delay(wait_opening_led);
   float iir1=0;
@@ -334,15 +333,18 @@ float RGB1_led()
     iir = iir1 + iir;
     delay(500);
   }
-  digitalWrite(R1_pin, LOW);
-  digitalWrite(G1_pin, LOW);
-  digitalWrite(B1_pin, LOW);
+  digitalWrite(pins_rgb[0], LOW);
+  digitalWrite(pins_rgb[1], LOW);
+  digitalWrite(pins_rgb[2], LOW);
   return (float)iir / samples_number;
 }
 
 // Capture DO values
 void capture_DO() {
-
+  array_do1[0] = R1_led();    // R value
+  array_do1[1] = G1_led();    // G value
+  array_do1[2] = B1_led();    // B value
+  array_do1[3] = RGB1_led();  // All value
 }
 
 // Mostra per LCD les dades
@@ -601,6 +603,11 @@ void loop() {
     {
         delay(1000);
         // Esperar i tornar a mirar si hi ha moviment
+        if ( detecta_PIR() == true )
+        {
+          // Continua amb moviment, mesurar DO
+          capture_DO();
+        }
     }
     else
     {
