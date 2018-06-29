@@ -20,6 +20,12 @@
  *
  */
 
+// Select your GPRS modem:
+#define TINY_GSM_MODEM_A6
+// Increase the buffer
+#define TINY_GSM_RX_BUFFER 512
+// Set serial for debug console (to the Serial Monitor, speed 115200)
+#define SerialMon Serial
 
 // Includes
 #include <SD.h>
@@ -31,10 +37,21 @@
 #include <DallasTemperature.h>
 #include <BH1750.h>
 #include <LiquidCrystal_I2C.h>
+#include <TinyGsmClient.h>
+#include <StreamDebugger.h>
 
 
 // Debug mode for verbose info on serial monitor
 const boolean debug = true;
+
+const char server[] = "sensors.openspirulina.com";
+const int  port = 80;
+
+// Your GPRS credentials
+// Leave empty, if missing user or pass
+const char apn[]  = "internet";
+const char user[] = "";
+const char pass[] = "";
 
 
 /*
@@ -85,6 +102,7 @@ const int pins_dht[num_DHT] = {7};    // DHT Pins
 const int pins_pir[num_PIR] = {20};   // PIR Pins
 const int pins_ph[num_pH] = {1};      // pH Pins (Analog)
 const int pins_do[num_DO] = {2};      // DO Pins (Analog)
+#define SerialAT Serial2              // Serial port for GPRS Modem
 
 /*
    _____ _      ____  ____          _       __      __     _____   _____
@@ -113,6 +131,11 @@ float array_DHT_H[num_DHT];
 int array_ph[num_pH];
 // Array of DO sensors
 int array_do[num_DO];
+
+// GPRS Modem
+StreamDebugger debugger(SerialAT, SerialMon);
+TinyGsm modem(debugger);
+TinyGsmClient client(modem);
 
 // File handler to SD
 File myFile;
@@ -458,7 +481,7 @@ void loop() {
 
 void setup() {
   // start serial port:
-  Serial.begin(9600);
+  Serial.begin(115200);
   while (!Serial)
   {
     ; // wait for serial port to connect. Needed for native USB port only
@@ -522,6 +545,37 @@ void setup() {
     }
   }
 
+  // Initialize Ethernet shield
+  if(option_internet == internet_ethernet) {
+    // give the ethernet module time to boot up:
+    delay(2000);
+    // start the Ethernet connection using a fixed IP address and DNS server:
+    // Ethernet.begin(mac, ip, myDns, gateway, subnet);
+    // DHCP IP ( For automatic IP )
+    Ethernet.begin(mac);
+    
+    // print the Ethernet board/shield's IP address:
+    if(debug) {
+      Serial.print("My IP address: ");
+      Serial.println(Ethernet.localIP());
+    }
+  }
+  // Initialize GPRS Modem
+  else if(option_internet == internet_gprs) {
+    // Set GSM module baud rate
+    SerialAT.begin(38400);
+    delay(3000);
+    if (debug)
+      SerialMon.print("Initializing modem...");
+    if (!modem.init()) {
+      SerialMon.println(F(" [fail]"));
+      delay(5000);
+      return;
+    }
+    if (debug)
+      SerialMon.println(F(" [OK]"));    
+  }
+
   // Inicialitza RTC en cas de disposar
   if(option_clock) {
     // Comprobamos si tenemos el RTC conectado
@@ -536,9 +590,7 @@ void setup() {
       if (debug)
         Serial.println(getDateTime());
     }
-
     // Setting RTC time for first time programing RTC
     //rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
   }
-
 }
