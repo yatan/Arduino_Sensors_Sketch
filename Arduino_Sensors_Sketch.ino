@@ -117,6 +117,9 @@ const int pins_dht[num_DHT] = {7};    // DHT Pins
 const int pins_pir[num_PIR] = {20};   // PIR Pins
 const int pins_ph[num_pH] = {1};      // pH Pins (Analog)
 const int pins_do[num_DO] = {2};      // DO Pins (Analog)
+const unsigned long wait_opening_led = 1000; // Waiting ms for opening led
+const int samples_number = 10;        // Number of samples of DO
+const int pins_rgb[3] = {5,6,7};      // DO RGB Laser Pins (Digital)
 #define SerialAT Serial2              // Serial port for GPRS Modem
 
 /*
@@ -133,8 +136,8 @@ DallasTemperature sensorDS18B20(&oneWireObjeto);
 // Array de temperatures amb tamany num_temp sensors assignats
 int array_temps[num_T];
 // LCD I2C
-#define I2C_ADDR    0x27
-LiquidCrystal_I2C lcd(I2C_ADDR, 20, 4);
+#define I2C_ADDR    0x27                    // LCD I2C address
+LiquidCrystal_I2C lcd(I2C_ADDR, 20, 4);     // LCD Type Columns * Lines
 // RTC DS3231 (clock sensor)
 RTC_DS3231 rtc;
 // Array of DHT sensors
@@ -147,9 +150,10 @@ float array_DHT_H[num_DHT];
 int array_ph[num_pH];
 // Array of DO sensors
 int array_do[num_DO];
+BH1750 ir_led1(0x23);    //Si el ADDR està inactiu
+// BH1750 ir_led2(0x5C); //Si el ADDR està amb més de 0.7V
 
 // GPRS Modem
-
 #ifdef DUMP_AT_COMMANDS
   #include <StreamDebugger.h>
   StreamDebugger debugger(SerialAT, SerialMon);
@@ -218,6 +222,7 @@ void capture_dht() {
   }
 }
 
+// Return ph value from SensorPin
 float capture_ph(int SensorPin) {
   unsigned long int avgValue;  //Store the average value of the sensor feedback
   float b;
@@ -257,6 +262,87 @@ boolean detecta_PIR() {
       return false;
   }
   return true;
+}
+
+
+float R1_led()
+{
+  digitalWrite(R1_pin, HIGH);
+  // Llegim valors amb el led obert
+  delay(wait_opening_led);
+  float iir1=0;
+  float iir=0;
+  for (int i=0; i<samples_number; i++) 
+  {
+    iir1 = ir_led1.readLightLevel();
+    iir = iir1 + iir;
+    delay(500);
+  }
+  digitalWrite(R1_pin, LOW);
+  iR1=  iir / samples_number;
+  return iR1;
+}
+
+float G1_led()
+{
+  digitalWrite(G1_pin, HIGH);
+  float iir1=0;
+  float iir=0;
+  delay(wait_opening_led);
+  for (int i=0; i<samples_number; i++) 
+  {
+    iir1 = ir_led1.readLightLevel();
+    iir = iir1 + iir;
+    delay(500);
+  }
+  digitalWrite(G1_pin, LOW);
+  return (float)iir / samples_number;
+}
+
+
+
+float B1_led()
+{
+  digitalWrite(B1_pin, HIGH);
+  // Llegim valors amb el led obert
+  delay(wait_opening_led);
+  float iir1=0;
+  float iir=0;
+  for (int i=0; i<samples_number; i++) 
+  {
+    iir1 = ir_led1.readLightLevel();
+    iir = iir1 + iir;
+    delay(500);
+  }
+  digitalWrite(B1_pin, LOW);
+  return (float)iir / samples_number;
+}
+
+
+float RGB1_led()
+{
+  digitalWrite(R1_pin, HIGH);
+  digitalWrite(G1_pin, HIGH);
+  digitalWrite(B1_pin, HIGH);
+  // Llegim valors amb el led obert
+  delay(wait_opening_led);
+  float iir1=0;
+  float iir=0;
+  for (int i=0; i<samples_number; i++) 
+  {
+    iir1 = ir_led1.readLightLevel();
+    iir = iir1 + iir;
+    delay(500);
+  }
+  digitalWrite(R1_pin, LOW);
+  digitalWrite(G1_pin, LOW);
+  digitalWrite(B1_pin, LOW);
+  return (float)iir / samples_number;
+}
+
+// Capture DO values
+void capture_DO() {
+
 }
 
 // Mostra per LCD les dades
@@ -584,6 +670,24 @@ void setup() {
         Serial.println(" ...");
       }
       array_DHT[i]->begin();
+    }
+  }
+
+  //Establint modo output per al LED si hi ha DO
+  if(pins_do > 0)
+  {
+    //LED 1  
+    pinMode(pins_rgb[0], OUTPUT); // R
+    pinMode(pins_rgb[1], OUTPUT); // G
+    pinMode(pins_rgb[2], OUTPUT); // B
+
+    if (ir_led1.begin(BH1750::CONTINUOUS_HIGH_RES_MODE_2)) {
+      if(debug)
+        Serial.println(F("Light BH1750 sensor 1 started"));
+      }
+    else {
+      if(debug)
+        Serial.println(F("Error initialising light sensor 1 BH1750"));
     }
   }
 
