@@ -318,22 +318,29 @@ void send_data_server() {
 
   String cadena = "GET /afegir.php?";
 
+  // Append our ID Arduino
+  cadena += "idarduino=";
+  cadena += id_arduino;
+
   // Append temperatures
   for( int i=0; i<num_T; i++){
-    if(i>0)
-      cadena += "&";
-    cadena += "temp";
+    cadena += "&temp";
     cadena += i;
     cadena += "=";
     cadena += array_temps[i];
   }
-
-  // Append Ambient temperatures
-  cadena += "&ta1=";
-  cadena += ambient1;
-  // Append Ambient Humidity
-  cadena += "&th1=";
-  cadena += humetat; 
+  
+  // Append Ambient temperatures and Humidity
+  for( int i=0; i<num_DHT; i++) {
+    cadena += "&ta";
+    cadena += i;
+    cadena += "=";
+    cadena += array_DHT_T[i];
+    cadena += "&th";
+    cadena += i;
+    cadena += "=";
+    cadena += array_DHT_H[i];    
+  }
   
   /*
   // Append LDR sensors
@@ -358,10 +365,6 @@ void send_data_server() {
   cadena += ir20;  
   //cadena += "&laser3=";
   //cadena += laser_sensor3;  
-  
-  // Append our ID Arduino
-  cadena += "&idarduino=";
-  cadena += id_arduino;
 
   if(debug)
     Serial.println(cadena);
