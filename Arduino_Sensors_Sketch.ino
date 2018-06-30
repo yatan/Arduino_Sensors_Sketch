@@ -433,7 +433,26 @@ void write_SD_Headers() {
       myFile.print(F("pH_"));
       myFile.print(i);
       myFile.print(F("#"));
-    }    
+    }
+    // DO Sensor
+    for(int i=0; i<num_DO; i++) {
+      // R
+      myFile.print(F("DO_"));
+      myFile.print(i);
+      myFile.print(F("_R#"));
+      // G
+      myFile.print(F("DO_"));
+      myFile.print(i);
+      myFile.print(F("_G#"));
+      // B
+      myFile.print(F("DO_"));
+      myFile.print(i);
+      myFile.print(F("_B#"));
+      // RGB
+      myFile.print(F("DO_"));
+      myFile.print(i);
+      myFile.print(F("_RGB#"));                  
+    }
     // End of line
     myFile.println(F(""));  
     // close the file:
@@ -478,7 +497,12 @@ void save_to_SD() {
     for(int i=0; i<num_pH; i++) {
       myFile.print(array_ph[i]);
       myFile.print(F("#"));
-    }   
+    }
+    // DO Sensor
+    for(int i=0; i<4; i++) {          // R-G-B-RGB 
+      myFile.print(array_do1[i]);     // 0-1-2-3
+      myFile.print(F("#"));          
+    }
     // End of line
     myFile.println("");
     // close the file:
