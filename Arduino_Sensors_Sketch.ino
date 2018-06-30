@@ -79,7 +79,7 @@ const char pass[] = "";
  */
 
 const int num_T = 4;    // Temperature of the culture. Sensor DS18B20.MAX 6
-						            // T1_s T1_b
+						            // T1_s T1_b -- T2_s T2_b = 4
 const int num_DHT = 1;  // Humidity and temperature ambient sensor. MAX 3
 #define DHTTYPE DHT22   // Type of DHT sensor DHT11 - DHT22
 const int num_PIR = 1;  // PIR movement sensor. MAX 3
@@ -409,11 +409,19 @@ void write_SD_Headers() {
     // If Have RTC
     if(option_clock)
       myFile.print(F("DateTime#"));
-    // Sensor_1#......#Sensor_n#
-    for(int i=0; i<num_T; i++) {
-      myFile.print(F("sensor_"));
-      myFile.print(i);
-      myFile.print(F("#"));
+    // T1_s#T1_b#......#Tn_s#Tn_b#
+    for(int i=0, j=0; i<num_T; i++) {
+      if(i%2==0) {
+        myFile.print(F("T"));
+        myFile.print(j);
+        myFile.print(F("_s#"));
+      }
+      else {
+        myFile.print(F("T"));
+        myFile.print(j);
+        myFile.print(F("_b#"));
+        j++;
+      }
     }
     // ambient1_temp#ambient1_humetat#
     for(int i=0; i<num_DHT; i++) {
@@ -475,7 +483,7 @@ void save_to_SD() {
       myFile.print(getDateTime());
       myFile.print(F("#"));
     }
-    // Temperatures del cultiu Sensors_T
+    // Temperatures del cultiu Tn_s, Tn_b, ...
     for(int i=0; i<num_T; i++) {
       myFile.print(array_temps[i]);
       myFile.print(F("#"));
