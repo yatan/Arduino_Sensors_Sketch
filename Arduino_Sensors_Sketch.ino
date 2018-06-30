@@ -424,8 +424,12 @@ void write_SD_Headers() {
       myFile.print(i);
       myFile.print(F("_humetat#"));      
     }
-    
-    myFile.println(F("lux#"));    
+    // Lux sensor
+    if(option_lux != lux_none) {
+      myFile.print(F("lux#"));
+    }
+    // End of line
+    myFile.println(F(""));  
     // close the file:
     myFile.close();
   }
@@ -442,9 +446,10 @@ void save_to_SD() {
       Serial.println("Writing to: " + fileName);
 
     //DateTime if have RTC
-    if(option_clock)
+    if(option_clock) {
       myFile.print(getDateTime());
-    
+      myFile.print(F("#"));
+    }
     // Temperatures del cultiu Sensors_T
     for(int i=0; i<num_T; i++) {
       myFile.print(array_temps[i]);
@@ -454,14 +459,17 @@ void save_to_SD() {
     for(int i=0; i<num_DHT; i++) {
       myFile.print(F("#"));
       myFile.print(array_DHT_T[i]);
-      myFile.print(F("#"));      
+      myFile.print(F("#"));   
       myFile.print(array_DHT_H[i]);
+      myFile.print(F("#"));
     }      
-
-    //Lux sensor
-    myFile.print('#');
-    //myFile.println(lux_sensor1);
-    
+    // Lux sensor
+    if(option_lux != lux_none) {
+      myFile.print(lux);
+      myFile.print("#");
+    }    
+    // End of line
+    myFile.println("");
     // close the file:
     myFile.close();
 
