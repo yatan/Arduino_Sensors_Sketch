@@ -275,9 +275,9 @@ boolean detecta_PIR() {
   return true;
 }
 
-//Functions for Optical Density (DO)
+// Functions for Optical Density (DO)
 
-//Red light values for DO.
+// Red light values for DO.
 float R1_led()
 {
   digitalWrite(pins_rgb[0], HIGH);
@@ -313,7 +313,7 @@ float G1_led()
 }
 
 
-//Blue light values for DO.
+// Blue light values for DO.
 float B1_led()
 {
   digitalWrite(pins_rgb[2], HIGH);
@@ -331,7 +331,7 @@ float B1_led()
   return (float)iir / samples_number;
 }
 
-//White light values for DO.
+// White light values for DO.
 float RGB1_led()
 {
   digitalWrite(pins_rgb[0], HIGH);
@@ -610,7 +610,8 @@ void loop() {
   if(option_lux != lux_none) {
     lux = capture_lux();
   }
-/* La discrimanació sobre si les dades de DO son vàlides o no ho farem mitjançant el php...
+  
+  /* La discrimanació sobre si les dades de DO son vàlides o no ho farem mitjançant el php...
   if(num_PIR > 0) {
     if ( detecta_PIR() == true )
     {
@@ -625,13 +626,12 @@ void loop() {
       // No hi ha moviment
     }
   }	
-*/
-//Capture DO values (Red, Green, Blue, and White)
-	if(num_DO>0) {
-	capture_DO();	
-	 }	
-		
-	
+  */
+  
+  //Capture DO values (Red, Green, Blue, and White)
+	if(num_DO > 0) {
+	  capture_DO();	
+	}	
 	
   if(option_internet != internet_none) {
     send_data_server();
