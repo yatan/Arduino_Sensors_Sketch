@@ -121,6 +121,9 @@ const unsigned long wait_opening_led = 1000; // Waiting ms for opening led
 const int samples_number = 10;        // Number of samples of DO
 const int pins_rgb[3] = {5,6,7};      // DO RGB Laser Pins (Digital)
 #define SerialAT Serial2              // Serial port for GPRS Modem
+#if option_lux == lux_ldr             // Lux sensor with LDR
+  const int ldr_pin = 3;              // LDR pin (Analog)
+#endif
 
 /*
    _____ _      ____  ____          _       __      __     _____   _____
@@ -151,7 +154,12 @@ int array_ph[num_pH];
 // Array of DO sensors [R,G,B,RGB]
 int array_do1[4];
 BH1750 ir_led1(0x23);    //Si el ADDR està inactiu
-// BH1750 ir_led2(0x5C); //Si el ADDR està amb més de 0.7V
+// Define lux sensor Type
+#if option_lux == lux_BH1750  // Lux sensor with BH1750
+  BH1750 lux_sensor(0x5C);    //Si el ADDR està amb més de 0.7V
+#elif option_lux == lux_ldr   // Lux sensor with LDR
+  float lux_sensor;
+#endif
 
 // GPRS Modem
 #ifdef DUMP_AT_COMMANDS
@@ -678,13 +686,25 @@ void setup() {
 
     if (ir_led1.begin(BH1750::CONTINUOUS_HIGH_RES_MODE_2)) {
       if(debug)
-        Serial.println(F("Light BH1750 sensor 1 started"));
+        Serial.println(F("[DO] Light BH1750 sensor started"));
       }
     else {
       if(debug)
-        Serial.println(F("Error initialising light sensor 1 BH1750"));
+        Serial.println(F("[DO] Error initialising light sensor BH1750"));
     }
   }
+
+  // Initialize BH1750 light sensor
+  #if option_lux == lux_BH1750
+    if (lux_sensor.begin(BH1750::CONTINUOUS_HIGH_RES_MODE_2)) {
+      if(debug)
+        Serial.println(F("Light BH1750 sensor started"));
+      }
+    else {
+      if(debug)
+        Serial.println(F("Error initialising light sensor BH1750"));
+    }
+  #endif
 
   // Inicialitza LCD en cas que n'hi haigui
   if(option_LCD) {
