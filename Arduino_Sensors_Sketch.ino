@@ -116,7 +116,7 @@ const boolean option_clock = true; //if clock posible (=1) or not (=0)
 const int pins_dht[num_DHT] = {7};    // DHT Pins
 const int pins_pir[num_PIR] = {20};   // PIR Pins
 const int pins_ph[num_pH] = {1};      // pH Pins (Analog)
-const int pins_do[num_DO] = {2};      // DO Pins (Analog)
+const int pins_do[num_DO] = {2};      // DO Ps (Analog)
 const unsigned long wait_opening_led = 1000; // Waiting ms for opening led
 const int samples_number = 10;        // Number of samples of DO
 const int pins_rgb[3] = {5,6,7};      // DO RGB Laser Pins (Digital)
@@ -275,7 +275,9 @@ boolean detecta_PIR() {
   return true;
 }
 
+//Functions for Optical Density (DO)
 
+//Red light values for DO.
 float R1_led()
 {
   digitalWrite(pins_rgb[0], HIGH);
@@ -293,6 +295,7 @@ float R1_led()
   return (float)iir / samples_number;
 }
 
+// Green light values for DO.
 float G1_led()
 {
   digitalWrite(pins_rgb[1], HIGH);
@@ -310,7 +313,7 @@ float G1_led()
 }
 
 
-
+//Blue light values for DO.
 float B1_led()
 {
   digitalWrite(pins_rgb[2], HIGH);
@@ -328,7 +331,7 @@ float B1_led()
   return (float)iir / samples_number;
 }
 
-
+//White light values for DO.
 float RGB1_led()
 {
   digitalWrite(pins_rgb[0], HIGH);
@@ -376,7 +379,7 @@ void mostra_LCD() {
   lcd.print("pH1: 11,3 pH2: 11,4");
   lcd.setCursor ( 0, 2 );       // go to the 3rd line
   lcd.print("LAST: ");
-  lcd.setCursor ( 0, 3 );       // go to the 4th line
+  lcd.setCursor ( 2, 3 );       // go to the 4th line
   lcd.print("OpenSpirulina");
 }
 
@@ -607,7 +610,7 @@ void loop() {
   if(option_lux != lux_none) {
     lux = capture_lux();
   }
-
+/* La discrimanació sobre si les dades de DO son vàlides o no ho farem mitjançant el php...
   if(num_PIR > 0) {
     if ( detecta_PIR() == true )
     {
@@ -621,8 +624,15 @@ void loop() {
     {
       // No hi ha moviment
     }
-  }
-
+  }	
+*/
+//Capture DO values (Red, Green, Blue, and White)
+	if(num_DO>0) {
+	capture_DO();	
+	 }	
+		
+	
+	
   if(option_internet != internet_none) {
     send_data_server();
   }
