@@ -507,10 +507,13 @@ void save_to_SD() {
       myFile.print(F("#"));
     }
     // DO Sensor
-    for(int i=0; i<4; i++) {          // R-G-B-RGB 
-      myFile.print(array_do1[i]);     // 0-1-2-3
-      myFile.print(F("#"));          
+    if(num_DO > 0) {                    // If have DO sensor
+      for(int i=0; i<4; i++) {          // R-G-B-RGB 
+        myFile.print(array_do1[i]);     // 0-1-2-3
+        myFile.print(F("#"));          
+      }
     }
+
     // End of line
     myFile.println("");
     // close the file:
@@ -555,30 +558,36 @@ void send_data_server() {
     cadena += array_DHT_H[i];    
   }
   
-  /*
-  // Append LDR sensors
-  cadena += "&ldr1=";
-  cadena += lux_sensor1;
-  cadena += "&ldr2=";
-  cadena += lux_sensor2;
-  cadena += "&ldr3=";
-  cadena += lux_sensor3;
-  cadena += "&ldr4=";
-  cadena += lux_sensor4;
-  */
-  /*
-  // Append LDR Laser Sensors
-  cadena += "&irradiancia1=";
-  cadena += ir1;    
-  cadena += "&irradiancia1_0=";
-  cadena += ir10;  
-  cadena += "&irradiancia2=";
-  cadena += ir2;    
-  cadena += "&irradiancia2_0=";
-  cadena += ir20;  
-  //cadena += "&laser3=";
-  //cadena += laser_sensor3;  
-*/
+  // Append Lux sensors
+  if(option_lux != lux_none) {
+    cadena += "&ldr1=";
+    cadena += lux;
+  }  
+
+  // Append pH Sensor
+  for(int i=0; i<num_pH; i++) {
+    cadena += "&ph";
+    cadena += i;
+    cadena += "=";
+    cadena += array_ph[i];
+  }  
+
+  // Append DO Sensor
+  if(num_DO > 0) {                    // If have DO sensor
+    // R
+    cadena += "&do1_R="
+    cadena += array_do1[0];
+    // G
+    cadena += "&do1_G="
+    cadena += array_do1[1];
+    // B
+    cadena += "&do1_B="
+    cadena += array_do1[2];
+    // RGB
+    cadena += "&do1_RGB="
+    cadena += array_do1[3];     
+  }
+  
   if(debug) {
     Serial.print("Server petition: ");
     Serial.println(cadena);
