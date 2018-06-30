@@ -17,6 +17,12 @@
  *
  * BH1750: lux sensor to mesure spirulina's biomass concentration.
  *  library:   https://github.com/claws/BH1750
+ * 
+ * LCD LiquidCrystal_I2C LiquidCrystal Arduino library for the DFRobot I2C LCD displays:
+ * https://github.com/marcoschwartz/LiquidCrystal_I2C
+ * 
+ * GSM/GPRS A6 modem library:
+ * https://github.com/vshymanskyy/TinyGSM
  *
  */
 
@@ -372,13 +378,38 @@ float capture_lux() {
 
 // Mostra per LCD les dades
 void mostra_LCD() {
+  char* buffer="";              // String buffer
+
   lcd.clear();                  // Clear screen
-  lcd.home ();                  // go home
-  lcd.print("T1: 12,3 T2: 45,6");
+  lcd.home ();                  // Linea 1
+  if(num_T > 0) {
+    lcd.print("T1:");             // (T1_s + T1_b) / 2
+    float t1_mitja = ( array_temps[0] + array_temps[1] ) / 2;
+    dtostrf(t1_mitja,10,2,buffer);
+    lcd.print(buffer);
+  }
+  if(num_T > 2) {
+    lcd.print("T2:");             // (T2_s + T2_b) / 2
+    float t2_mitja = ( array_temps[2] + array_temps[3] ) / 2;
+    dtostrf(t2_mitja,10,2,buffer);
+    lcd.print(buffer);  
+  }
+
   lcd.setCursor ( 0, 1 );       // go to the 2nd line
-  lcd.print("pH1: 11,3 pH2: 11,4");
+  if(num_pH > 0) {
+    lcd.print("pH1:");
+    dtostrf(array_ph[0],10,2,buffer);
+    lcd.print(buffer);
+  }
+  if(num_pH > 1) {
+    lcd.print("pH2:");
+    dtostrf(array_ph[1],10,2,buffer);
+    lcd.print(buffer);
+  }
+
   lcd.setCursor ( 0, 2 );       // go to the 3rd line
   lcd.print("LAST: ");
+  
   lcd.setCursor ( 2, 3 );       // go to the 4th line
   lcd.print("OpenSpirulina");
 }
@@ -575,16 +606,16 @@ void send_data_server() {
   // Append DO Sensor
   if(num_DO > 0) {                    // If have DO sensor
     // R
-    cadena += "&do1_R="
+    cadena += "&do1_R=";
     cadena += array_do1[0];
     // G
-    cadena += "&do1_G="
+    cadena += "&do1_G=";
     cadena += array_do1[1];
     // B
-    cadena += "&do1_B="
+    cadena += "&do1_B=";
     cadena += array_do1[2];
     // RGB
-    cadena += "&do1_RGB="
+    cadena += "&do1_RGB=";
     cadena += array_do1[3];     
   }
   
