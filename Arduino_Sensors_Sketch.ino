@@ -157,9 +157,12 @@ BH1750 ir_led1(0x23);    //Si el ADDR està inactiu
 // Define lux sensor Type
 #if option_lux == lux_BH1750  // Lux sensor with BH1750
   BH1750 lux_sensor(0x5C);    //Si el ADDR està amb més de 0.7V
-#elif option_lux == lux_ldr   // Lux sensor with LDR
-  float lux_sensor;
+/*
+  #elif option_lux == lux_ldr   // Lux sensor with LDR
+*/
 #endif
+// Lux ambient value
+float lux;
 
 // GPRS Modem
 #ifdef DUMP_AT_COMMANDS
@@ -353,6 +356,15 @@ void capture_DO() {
   array_do1[1] = G1_led();    // G value
   array_do1[2] = B1_led();    // B value
   array_do1[3] = RGB1_led();  // All value
+}
+
+// Capture Lux ambient
+float capture_lux() {
+  #if option_lux == lux_BH1750          // Return Lux value with BH1750
+    return lux_sensor.readLightLevel();
+  #elif option_lux == lux_ldr           // Return Lux value with LDR
+    return analogRead(ldr_pin);
+  #endif
 }
 
 // Mostra per LCD les dades
@@ -593,7 +605,7 @@ void loop() {
   }
 
   if(option_lux != lux_none) {
-    //capture_lux();
+    lux = capture_lux();
   }
 
   if(num_PIR > 0) {
