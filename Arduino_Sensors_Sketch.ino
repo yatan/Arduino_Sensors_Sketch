@@ -671,6 +671,49 @@ void send_data_modem(String cadena) {
     return;
   }
   SerialMon.println(F("Server [OK]"));
+
+    // Make a HTTP GET request:
+  client.print(cadena + " HTTP/1.0\r\n");
+  client.print(String("Host: ") + server + "\r\n");
+  client.print("Connection: close\r\n\r\n");
+
+  // Wait for data to arrive
+  while (client.connected() && !client.available()) {
+    delay(100);
+    SerialMon.print('.');
+  };
+  SerialMon.println();
+
+  // Skip all headers
+  client.find("\r\n\r\n");
+
+  // Read data
+  unsigned long timeout = millis();
+  unsigned long bytesReceived = 0;
+  while (client.connected() && millis() - timeout < 10000L) {
+    while (client.available()) {
+      char c = client.read();
+      SerialMon.print(c);
+      bytesReceived += 1;
+      timeout = millis();
+    }
+  }
+
+  client.stop();
+  if(debug)
+    SerialMon.println(F("Server disconnected"));
+
+  modem.gprsDisconnect();
+  if(debug)
+    SerialMon.println(F("GPRS disconnected"));
+  
+  if(debug) {
+    SerialMon.println();
+    SerialMon.println(F("************************"));
+    SerialMon.print  (F(" Received: "));
+    SerialMon.print(bytesReceived);
+    SerialMon.println(F(" bytes"));
+  }
 }
 
 /*
