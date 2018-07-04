@@ -33,7 +33,7 @@
 // Set serial for debug console (to the Serial Monitor, speed 115200)
 #define SerialMon Serial
 // Uncomment this if you want to see all AT commands
-#define DUMP_AT_COMMANDS
+//#define DUMP_AT_COMMANDS
 
 // Includes
 #include <SD.h>
@@ -117,19 +117,20 @@ const boolean option_clock = true; //if clock posible (=1) or not (=0)
  |_|   |_____|_| \_|_____/
 */
 
-#define pin_onewire 0                 // where 1-wire is connected
-#define pin_sd_card 4                 // Pin lector SD
-const int pins_dht[num_DHT] = {7};    // DHT Pins
-const int pins_pir[num_PIR] = {20};   // PIR Pins
+      /*   ANALOG PINS  */
 const int pins_ph[num_pH] = {1};      // pH Pins (Analog)
 const int pins_do[num_DO] = {2};      // DO Ps (Analog)
-const unsigned long wait_opening_led = 1000; // Waiting ms for opening led
-const int samples_number = 10;        // Number of samples of DO
-const int pins_rgb[3] = {5,6,7};      // DO RGB Laser Pins (Digital)
-#define SerialAT Serial2              // Serial port for GPRS Modem
 #if option_lux == lux_ldr             // Lux sensor with LDR
-  const int ldr_pin = 3;              // LDR pin (Analog)
+const int ldr_pin = 3;                // LDR pin (Analog)
 #endif
+      /*   DIGITAL PINS  */
+#define pin_onewire 3                 // where 1-wire is connected
+#define pin_sd_card 10                 // Pin lector SD
+const int pins_rgb[3] = {5,6,7};      // DO RGB Laser Pins (Digital)
+const int pins_dht[num_DHT] = {7};    // DHT Pins
+const int pins_pir[num_PIR] = {30};   // PIR Pins
+#define SerialAT Serial2              // Serial port for GPRS Modem
+
 
 /*
    _____ _      ____  ____          _       __      __     _____   _____
@@ -139,6 +140,9 @@ const int pins_rgb[3] = {5,6,7};      // DO RGB Laser Pins (Digital)
  | |__| | |___| |__| | |_) / ____ \| |____     \  / ____ \| | \ \ ____) |
   \_____|______\____/|____/_/    \_\______|     \/_/    \_\_|  \_\_____/
 */
+
+const unsigned long wait_opening_led = 1000; // Waiting ms for opening led
+const int samples_number = 10;        // Number of samples of DO
 
 OneWire oneWireObjeto(pin_onewire);
 DallasTemperature sensorDS18B20(&oneWireObjeto);
@@ -162,13 +166,12 @@ int array_do1[4];
 BH1750 ir_led1(0x23);    //Si el ADDR està inactiu
 // Define lux sensor Type
 #if option_lux == lux_BH1750  // Lux sensor with BH1750
-  BH1750 lux_sensor(0x5C);    //Si el ADDR està amb més de 0.7V
-/*
-  #elif option_lux == lux_ldr   // Lux sensor with LDR
-*/
+BH1750 lux_sensor(0x5C);    //Si el ADDR està amb més de 0.7V
 #endif
 // Lux ambient value
 float lux;
+// Last time sended data
+String last_send;
 
 // GPRS Modem
 #ifdef DUMP_AT_COMMANDS
@@ -216,6 +219,40 @@ String getDateTime()
   }
   return hora;
 }
+
+// Retorna hora via RTC
+String getTime()
+{
+  String hora = "";
+  // En cas que no hi haigui RTC retorna cadena buida
+  if(option_clock) {
+    DateTime now = rtc.now();
+    hora += now.hour();
+    hora += ':';
+    hora += now.minute();
+    hora += ':';
+    hora += now.second();
+  }
+  return hora;
+}
+
+// Retorna dia i hora via RTC
+String getDate()
+{
+  String hora = "";
+  // En cas que no hi haigui RTC retorna cadena buida
+  if(option_clock) {
+    DateTime now = rtc.now();
+    hora += now.day();
+    hora += '/';
+    hora += now.month();
+    hora += '/';
+    hora += now.year();
+  }
+  return hora;
+}
+
+
 
 // Captura les temperatures via array de sensors
 void capture_temps(){
@@ -378,39 +415,40 @@ float capture_lux() {
 
 // Mostra per LCD les dades
 void mostra_LCD() {
-  char* buffer="";              // String buffer
+  char buffer_L[6];              // String buffer
 
   lcd.clear();                  // Clear screen
   lcd.home ();                  // Linea 1
   if(num_T > 0) {
     lcd.print("T1:");             // (T1_s + T1_b) / 2
     float t1_mitja = ( array_temps[0] + array_temps[1] ) / 2;
-    dtostrf(t1_mitja,10,2,buffer);
-    lcd.print(buffer);
+    dtostrf(t1_mitja,4,2,buffer_L);
+    lcd.print(buffer_L);
   }
   if(num_T > 2) {
-    lcd.print("T2:");             // (T2_s + T2_b) / 2
+    lcd.print(" T2:");             // (T2_s + T2_b) / 2
     float t2_mitja = ( array_temps[2] + array_temps[3] ) / 2;
-    dtostrf(t2_mitja,10,2,buffer);
-    lcd.print(buffer);  
+    dtostrf(t2_mitja,4,2,buffer_L);
+    lcd.print(buffer_L);  
   }
 
   lcd.setCursor ( 0, 1 );       // go to the 2nd line
   if(num_pH > 0) {
     lcd.print("pH1:");
-    dtostrf(array_ph[0],10,2,buffer);
-    lcd.print(buffer);
+    dtostrf(array_ph[0],4,2,buffer_L);
+    lcd.print(buffer_L);
   }
   if(num_pH > 1) {
     lcd.print("pH2:");
-    dtostrf(array_ph[1],10,2,buffer);
-    lcd.print(buffer);
+    dtostrf(array_ph[1],4,2,buffer_L);
+    lcd.print(buffer_L);
   }
 
   lcd.setCursor ( 0, 2 );       // go to the 3rd line
   lcd.print("LAST: ");
+  lcd.print(last_send);
   
-  lcd.setCursor ( 2, 3 );       // go to the 4th line
+  lcd.setCursor ( 3, 3 );       // go to the 4th line
   lcd.print("OpenSpirulina");
 }
 
@@ -640,80 +678,120 @@ void send_data_ethernet(String cadena) {
 
 }
 
-void send_data_modem(String cadena) {
-  
-  SerialMon.print("Waiting for network...");
+bool init_modem() {
+  if (!modem.restart()) {
+    SerialMon.println(F("Modem init [fail]"));
+    delay(5000);
+    return false;
+  }
+  else {
+    return true;
+  }
+}
+
+bool connect_network() {
+  if(debug)
+    SerialMon.println("Waiting for network...");
   if (!modem.waitForNetwork()) {
     SerialMon.println(F("Network [fail]"));
     delay(10000);
-    return;
+    return false;
   }
-  SerialMon.println(F("Network [OK]"));
-
-  SerialMon.print("Connecting to ");
-  SerialMon.print(apn);
-  if (!modem.gprsConnect(apn, user, pass)) {
-    SerialMon.println(F("GRPS [fail]"));
-    delay(10000);
-    return;
+  else {
+    if(debug)
+      SerialMon.println(F("Network [OK]"));  
+    return true;
   }
-  SerialMon.println(F("GPRS [OK]"));
-
-  IPAddress local = modem.localIP();
-  SerialMon.print("Local IP: ");
-  SerialMon.println(local);
-
-  SerialMon.print(F("Connecting to "));
-  SerialMon.print(server);
-  if (!client.connect(server, port)) {
-    SerialMon.println(F("Server [fail]"));
-    delay(10000);
-    return;
-  }
-  SerialMon.println(F("Server [OK]"));
-
-    // Make a HTTP GET request:
-  client.print(cadena + " HTTP/1.0\r\n");
-  client.print(String("Host: ") + server + "\r\n");
-  client.print("Connection: close\r\n\r\n");
-
-  // Wait for data to arrive
-  while (client.connected() && !client.available()) {
-    delay(100);
-    SerialMon.print('.');
-  };
-  SerialMon.println();
-
-  // Skip all headers
-  client.find("\r\n\r\n");
-
-  // Read data
-  unsigned long timeout = millis();
-  unsigned long bytesReceived = 0;
-  while (client.connected() && millis() - timeout < 10000L) {
-    while (client.available()) {
-      char c = client.read();
-      SerialMon.print(c);
-      bytesReceived += 1;
-      timeout = millis();
-    }
-  }
-
-  client.stop();
-  if(debug)
-    SerialMon.println(F("Server disconnected"));
-
-  modem.gprsDisconnect();
-  if(debug)
-    SerialMon.println(F("GPRS disconnected"));
   
-  if(debug) {
-    SerialMon.println();
-    SerialMon.println(F("************************"));
-    SerialMon.print  (F(" Received: "));
-    SerialMon.print(bytesReceived);
-    SerialMon.println(F(" bytes"));
-  }
+}
+
+void send_data_modem(String cadena) {
+
+  // Set GSM module baud rate
+  SerialAT.begin(38400);
+  delay(3000);
+  if (debug)
+    SerialMon.println("Initializing modem...");
+    
+  if (init_modem()) {
+    if (debug) {
+      SerialMon.println(F("Modem init [OK]"));    
+      String modemInfo = modem.getModemInfo();
+      SerialMon.print(F("Modem: "));
+      SerialMon.println(modemInfo);
+    }
+    // Unlock your SIM card with a PIN
+    //modem.simUnlock("1234");    
+    if (connect_network()) {
+      // Network OK
+        SerialMon.print("Connecting to ");
+        SerialMon.print(apn);
+        if (!modem.gprsConnect(apn, user, pass)) {
+          SerialMon.println(F("GRPS [fail]"));
+          delay(10000);
+          return;
+        }
+        SerialMon.println(F("GPRS [OK]"));
+      
+        IPAddress local = modem.localIP();
+        SerialMon.print("Local IP: ");
+        SerialMon.println(local);
+      
+        SerialMon.print(F("Connecting to "));
+        SerialMon.print(server);
+        if (!client.connect(server, port)) {
+          SerialMon.println(F("Server [fail]"));
+          delay(10000);
+          return;
+        }
+        SerialMon.println(F("Server [OK]"));
+      
+          // Make a HTTP GET request:
+        client.print(cadena + " HTTP/1.0\r\n");
+        client.print(String("Host: ") + server + "\r\n");
+        client.print("Connection: close\r\n\r\n");
+      
+        // Wait for data to arrive
+        while (client.connected() && !client.available()) {
+          delay(100);
+          SerialMon.print('.');
+        };
+        SerialMon.println();
+      
+        // Skip all headers
+        client.find("\r\n\r\n");
+      
+        // Read data
+        unsigned long timeout = millis();
+        unsigned long bytesReceived = 0;
+        while (client.connected() && millis() - timeout < 10000L) {
+          while (client.available()) {
+            char c = client.read();
+            SerialMon.print(c);
+            bytesReceived += 1;
+            timeout = millis();
+          }
+        }
+      
+        client.stop();
+        if(debug)
+          SerialMon.println(F("Server disconnected"));
+      
+        modem.gprsDisconnect();
+        if(debug)
+          SerialMon.println(F("GPRS disconnected"));
+        
+        if(debug) {
+          SerialMon.println();
+          SerialMon.println(F("************************"));
+          SerialMon.print  (F(" Received: "));
+          SerialMon.print(bytesReceived);
+          SerialMon.println(F(" bytes"));
+        }
+      
+    }
+  }  
+  
 }
 
 /*
@@ -766,22 +844,26 @@ void loop() {
 	if(num_DO > 0) {
 	  capture_DO();	
 	}	
-	
+
+  if(option_LCD) {
+    mostra_LCD();
+  }
+  
   if(option_internet != internet_none) {
     send_data_server();
+    // En cas que el enviament sigui ok, actualitza last time ! change-me !
+    last_send = getTime();
   }
 
   if(option_SD) {
     save_to_SD();
   }
 
-  if(option_LCD) {
-    mostra_LCD();
-  }
 
 
   // END Loop()
   delay(10000);
+  Serial.flush();
 }
 
 /*
@@ -814,7 +896,10 @@ void setup() {
     sensorDS18B20.begin();
     // Verify number of detected devices
     if(sensorDS18B20.getDeviceCount() != num_T) {
-      Serial.println(F("[Error] Incorrect number DS18B20 Devices Detected !"));
+      Serial.print(F("[Error] Incorrect number DS18B20 Devices Detected ! ["));
+      Serial.print(sensorDS18B20.getDeviceCount());
+      Serial.print("] of: ");
+      Serial.println(num_T);
     }
   }
 
@@ -871,8 +956,13 @@ void setup() {
     lcd.backlight();
     lcd.setBacklight(HIGH);
     lcd.home ();                   // go home
+    lcd.setCursor ( 3, 0 );        
     lcd.print("OpenSpirulina");
-    lcd.setCursor ( 0, 2 );        // go to the 2nd line
+    if(option_clock) {
+      lcd.setCursor ( 0, 2 );        // go to the 2nd line
+      lcd.print(getDate());
+    }
+    lcd.setCursor ( 0, 3 );        // go to the 3nd line
     lcd.print("LOADING...");
   }
 
@@ -931,24 +1021,6 @@ void setup() {
   }
   // Initialize GPRS Modem
   else if(option_internet == internet_gprs) {
-    // Set GSM module baud rate
-    SerialAT.begin(38400);
-    delay(3000);
-    if (debug)
-      SerialMon.print("Initializing modem...");
-    if (!modem.restart()) {
-      SerialMon.println(F("Modem init [fail]"));
-      delay(5000);
-    }
-    else {
-      if (debug) {
-        SerialMon.println(F("Modem init [OK]"));    
-        String modemInfo = modem.getModemInfo();
-        SerialMon.print(F("Modem: "));
-        SerialMon.println(modemInfo);
-      }
-      // Unlock your SIM card with a PIN
-      //modem.simUnlock("1234");    
-    }
+
   }
 }
