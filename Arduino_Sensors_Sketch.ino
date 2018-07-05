@@ -636,7 +636,7 @@ void send_data_server() {
   // Append pH Sensor
   for(int i=0; i<num_pH; i++) {
     cadena += "&ph";
-    cadena += i;
+    cadena += i+1;
     cadena += "=";
     cadena += array_ph[i];
   }  
@@ -738,11 +738,11 @@ void send_data_modem(String cadena) {
         SerialMon.println(local);
       
         SerialMon.print(F("Connecting to "));
-        SerialMon.print(server);
+        SerialMon.println(server);
         if (!client.connect(server, port)) {
           SerialMon.println(F("Server [fail]"));
           delay(10000);
-          return;
+          return; // <---- ! Reconnect modem and init again
         }
         SerialMon.println(F("Server [OK]"));
       
@@ -752,19 +752,17 @@ void send_data_modem(String cadena) {
         client.print("Connection: close\r\n\r\n");
       
         // Wait for data to arrive
-        while (client.connected() && !client.available()) {
+        /*while (client.connected() && !client.available()) {
           delay(100);
           SerialMon.print('.');
-        };
-        SerialMon.println();
-      
+        };*/
+        SerialMon.println("Received data: ");
         // Skip all headers
         client.find("\r\n\r\n");
-      
         // Read data
         unsigned long timeout = millis();
         unsigned long bytesReceived = 0;
-        while (client.connected() && millis() - timeout < 10000L) {
+        while (client.connected() && millis() - timeout < 5000L) {
           while (client.available()) {
             char c = client.read();
             SerialMon.print(c);
@@ -772,7 +770,7 @@ void send_data_modem(String cadena) {
             timeout = millis();
           }
         }
-      
+        SerialMon.println();
         client.stop();
         if(debug)
           SerialMon.println(F("Server disconnected"));
@@ -782,13 +780,11 @@ void send_data_modem(String cadena) {
           SerialMon.println(F("GPRS disconnected"));
         
         if(debug) {
-          SerialMon.println();
           SerialMon.println(F("************************"));
           SerialMon.print  (F(" Received: "));
           SerialMon.print(bytesReceived);
           SerialMon.println(F(" bytes"));
         }
-      
     }
   }  
   
