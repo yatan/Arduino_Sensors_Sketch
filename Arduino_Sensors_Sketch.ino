@@ -96,7 +96,7 @@ enum option_lux_type {  // Valid option_lux_type
   lux_ldr,
   lux_BH1750
 };
-const option_lux_type option_lux = lux_BH1750; // No sensor | ldr sensor | lux BH1750
+const option_lux_type option_lux = lux_none; // No sensor | ldr sensor | lux BH1750
 enum option_internet_type { // Valid internet types
   internet_none,
   internet_ethernet,
@@ -105,7 +105,7 @@ enum option_internet_type { // Valid internet types
 };
 const option_internet_type option_internet = internet_gprs; // None | Ethernet | GPRS Modem | Wifi <-- Why not ? Dream on it
 const boolean option_LCD = true; // if LCD 20x04 possible (=1) or not (=0)
-const boolean option_SD = true;   //if SD connexion posible (=1) or not (=0)
+const boolean option_SD = false;   //if SD connexion posible (=1) or not (=0)
 const boolean option_clock = true; //if clock posible (=1) or not (=0)
 
 /*
@@ -127,8 +127,8 @@ const int ldr_pin = 3;                // LDR pin (Analog)
 #define pin_onewire 3                 // where 1-wire is connected
 #define pin_sd_card 10                 // Pin lector SD
 const int pins_rgb[3] = {5,6,7};      // DO RGB Laser Pins (Digital)
-const int pins_dht[num_DHT] = {7};    // DHT Pins
-const int pins_pir[num_PIR] = {30};   // PIR Pins
+const int pins_dht[num_DHT] = {8};    // DHT Pins
+const int pins_pir[num_PIR] = {9};    // PIR Pins
 #define SerialAT Serial2              // Serial port for GPRS Modem
 
 
@@ -147,7 +147,7 @@ const int samples_number = 10;        // Number of samples of DO
 OneWire oneWireObjeto(pin_onewire);
 DallasTemperature sensorDS18B20(&oneWireObjeto);
 // Array de temperatures amb tamany num_temp sensors assignats
-int array_temps[num_T];
+float array_temps[num_T];
 // LCD I2C
 #define I2C_ADDR    0x27                    // LCD I2C address
 LiquidCrystal_I2C lcd(I2C_ADDR, 20, 4);     // LCD Type Columns * Lines
@@ -160,9 +160,11 @@ float array_DHT_T[num_DHT];
 // Array Humiditys of DHT
 float array_DHT_H[num_DHT];
 // Array of pH sensors
-int array_ph[num_pH];
+float array_ph[num_pH];
+// Array of PIR sensors
+int array_pir[num_PIR];
 // Array of DO sensors [R,G,B,RGB]
-int array_do1[4];
+float array_do1[4];
 BH1750 ir_led1(0x23);    //Si el ADDR està inactiu
 // Define lux sensor Type
 #if option_lux == lux_BH1750  // Lux sensor with BH1750
@@ -310,12 +312,13 @@ float capture_ph(int SensorPin) {
 
 
 // Deteccio si hi ha moviment via PIR
-boolean detecta_PIR() {
-  for(int i=0; i<num_PIR; i++){
-    if(digitalRead(pins_pir[i]) == HIGH)
-      return false;
-  }
-  return true;
+boolean detecta_PIR(int pin) {
+  //for(int i=0; i<num_PIR; i++){
+  // Si hi ha moviment al pin PIR retorna true
+  if(digitalRead(pin) == HIGH)
+    return true;
+  else
+    return false;
 }
 
 // Functions for Optical Density (DO)
@@ -445,9 +448,11 @@ void mostra_LCD() {
   }
 
   lcd.setCursor ( 0, 2 );       // go to the 3rd line
-  lcd.print("LAST: ");
-  lcd.print(last_send);
-  
+  if(last_send != "") {
+    lcd.print("LAST: ");
+    lcd.print(last_send);
+  }
+
   lcd.setCursor ( 3, 3 );       // go to the 4th line
   lcd.print("OpenSpirulina");
 }
@@ -599,7 +604,7 @@ void save_to_SD() {
   }
 }
 
-void send_data_server() {
+boolean send_data_server() {
 
   String cadena = "GET /afegir.php?";
 
@@ -656,6 +661,17 @@ void send_data_server() {
     cadena += "&do1_RGB=";
     cadena += array_do1[3];     
   }
+
+  // Append PIR Sensor
+  for( int i=0; i<num_PIR; i++) {
+    cadena += "&pir";
+    cadena += i+1;
+    cadena += "=";
+    if(array_pir[i] == 0)
+      cadena += "0";
+    else if(array_pir[i] == 1)
+      cadena += "1";
+  }  
   
   if(debug) {
     Serial.print("Server petition: ");
@@ -666,19 +682,19 @@ void send_data_server() {
   if(option_internet == internet_ethernet) {
     // Add end of GET petition for Ethernet and send
     cadena += " HTTP/1.1";
-    send_data_ethernet(cadena);
+    return send_data_ethernet(cadena);
   }
   else if(option_internet == internet_gprs) {
     // Send petition to GPRS Modem
-    send_data_modem(cadena);
+    return send_data_modem(cadena, false);
   }
 }
 
-void send_data_ethernet(String cadena) {
-
+boolean send_data_ethernet(String cadena) {
+  return true;
 }
 
-bool init_modem() {
+boolean init_modem() {
   if (!modem.restart()) {
     SerialMon.println(F("Modem init [fail]"));
     delay(5000);
@@ -689,12 +705,12 @@ bool init_modem() {
   }
 }
 
-bool connect_network() {
+boolean connect_network() {
   if(debug)
     SerialMon.println("Waiting for network...");
   if (!modem.waitForNetwork()) {
     SerialMon.println(F("Network [fail]"));
-    delay(10000);
+    delay(1000);
     return false;
   }
   else {
@@ -705,7 +721,7 @@ bool connect_network() {
   
 }
 
-void send_data_modem(String cadena) {
+boolean send_data_modem(String cadena, boolean step_retry) {
 
   // Set GSM module baud rate
   SerialAT.begin(38400);
@@ -728,8 +744,12 @@ void send_data_modem(String cadena) {
         SerialMon.print(apn);
         if (!modem.gprsConnect(apn, user, pass)) {
           SerialMon.println(F("GRPS [fail]"));
-          delay(10000);
-          return;
+          delay(1000);
+          if(step_retry == false) {
+            send_data_modem(cadena, true);  // Reconnect modem and init again
+            Serial.println("[Modem] Retrying connection !");
+          }      
+          return false;
         }
         SerialMon.println(F("GPRS [OK]"));
       
@@ -741,8 +761,12 @@ void send_data_modem(String cadena) {
         SerialMon.println(server);
         if (!client.connect(server, port)) {
           SerialMon.println(F("Server [fail]"));
-          delay(10000);
-          return; // <---- ! Reconnect modem and init again
+          delay(1000);
+          if(step_retry == false) {
+            send_data_modem(cadena, true);  // Reconnect modem and init again
+            Serial.println("[Modem] Retrying connection !");
+          }      
+          return false;
         }
         SerialMon.println(F("Server [OK]"));
       
@@ -758,17 +782,17 @@ void send_data_modem(String cadena) {
         };*/
         SerialMon.println("Received data: ");
         // Skip all headers
-        client.find("\r\n\r\n");
+        //client.find("\r\n\r\n");
         // Read data
         unsigned long timeout = millis();
         unsigned long bytesReceived = 0;
-        while (client.connected() && millis() - timeout < 5000L) {
-          while (client.available()) {
-            char c = client.read();
-            SerialMon.print(c);
-            bytesReceived += 1;
-            timeout = millis();
-          }
+        while (client.connected() && millis() - timeout < 5000L) {//client.connected() &&
+          //while (client.available()) {
+          char c = client.read();
+          SerialMon.print(c);
+          bytesReceived += 1;
+          timeout = millis();
+          //}
         }
         SerialMon.println();
         client.stop();
@@ -778,15 +802,24 @@ void send_data_modem(String cadena) {
         modem.gprsDisconnect();
         if(debug)
           SerialMon.println(F("GPRS disconnected"));
-        
         if(debug) {
           SerialMon.println(F("************************"));
-          SerialMon.print  (F(" Received: "));
+          SerialMon.print  (F("Received: "));
           SerialMon.print(bytesReceived);
           SerialMon.println(F(" bytes"));
         }
+        return true;
     }
-  }  
+  } 
+  else{
+    Serial.println("[Modem] Fail !");
+    // Try one more time, if continue fails, continue
+    if(step_retry == false) {
+      send_data_modem(cadena, true);  
+      Serial.println("[Modem] Retrying connection !");
+    }
+    return false; 
+  }
   
 }
 
@@ -818,38 +851,35 @@ void loop() {
   if(option_lux != lux_none) {
     lux = capture_lux();
   }
-  
-  /* La discrimanació sobre si les dades de DO son vàlides o no ho farem mitjançant el php...
-  if(num_PIR > 0) {
-    if ( detecta_PIR() == true )
-    {
-        delay(1000);        // Esperar i tornar a mirar si hi ha moviment
-        if ( detecta_PIR() == true )
-        {
-          capture_DO();     // Continua existint moviment per tant mesurar DO
-        }
-    }
+
+  // Capture status of PIR Sensors
+  for(int i=0; i<num_PIR; i++) {
+    if ( detecta_PIR(pins_pir[i]) == true )
+      array_pir[i] = 1;
     else
-    {
-      // No hi ha moviment
-    }
+      array_pir[i] = 0;
   }	
-  */
   
   //Capture DO values (Red, Green, Blue, and White)
 	if(num_DO > 0) {
 	  capture_DO();	
+    delay(1000);
 	}	
-
+  
   if(option_LCD) {
     mostra_LCD();
+    delay(1000);
   }
   
   if(option_internet != internet_none) {
     send_data_server();
-    // En cas que el enviament sigui ok, actualitza last time ! change-me !
     last_send = getTime();
   }
+
+  /*if( sende_data == true ) {
+    
+    mostra_LCD();
+  }*/
 
   if(option_SD) {
     save_to_SD();
@@ -859,7 +889,7 @@ void loop() {
 
   // END Loop()
   delay(10000);
-  Serial.flush();
+  //Serial.flush();
 }
 
 /*
@@ -932,7 +962,7 @@ void setup() {
   }
 
   // Initialize BH1750 light sensor
-  #if option_lux == lux_BH1750
+  if(option_lux == lux_BH1750) {
     if (lux_sensor.begin(BH1750::CONTINUOUS_HIGH_RES_MODE_2)) {
       if(debug)
         Serial.println(F("Light BH1750 sensor started"));
@@ -941,7 +971,7 @@ void setup() {
       if(debug)
         Serial.println(F("Error initialising light sensor BH1750"));
     }
-  #endif
+  }
 
   // Inicialitza LCD en cas que n'hi haigui
   if(option_LCD) {
