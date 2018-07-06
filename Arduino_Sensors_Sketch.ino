@@ -749,8 +749,8 @@ boolean send_data_modem(String cadena, boolean step_retry) {
       SerialMon.println(F("GRPS [fail]"));
       delay(1000);
       if(step_retry == false) {
-        send_data_modem(cadena, true);  // Reconnect modem and init again
         Serial.println("[Modem] Retrying connection !");
+        send_data_modem(cadena, true);  // Reconnect modem and init again
       }      
       return false;
     }
@@ -766,8 +766,8 @@ boolean send_data_modem(String cadena, boolean step_retry) {
       SerialMon.println(F("Server [fail]"));
       delay(1000);
       if(step_retry == false) {
-        send_data_modem(cadena, true);  // Reconnect modem and init again
         Serial.println("[Modem] Retrying connection !");
+        send_data_modem(cadena, true);  // Reconnect modem and init again
       }      
       return false;
     }
@@ -818,8 +818,8 @@ boolean send_data_modem(String cadena, boolean step_retry) {
     Serial.println("[Modem] Fail !");
     // Try one more time, if continue fails, continue
     if(step_retry == false) {
-      send_data_modem(cadena, true);  
       Serial.println("[Modem] Retrying connection !");
+      send_data_modem(cadena, true);  
     }
     return false; 
   }
@@ -836,6 +836,9 @@ boolean send_data_modem(String cadena, boolean step_retry) {
  */
 
 void loop() {
+  // Start loop
+  if(debug)
+    Serial.println("Capturing data...");
 
   // Si tenim sondes de temperatura
   if(num_T > 0) {
