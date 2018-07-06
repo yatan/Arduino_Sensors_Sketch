@@ -774,12 +774,12 @@ boolean send_data_modem(String cadena, boolean step_retry) {
         client.print(cadena + " HTTP/1.0\r\n");
         client.print(String("Host: ") + server + "\r\n");
         client.print("Connection: close\r\n\r\n");
-      
+      /*
         // Wait for data to arrive
-        /*while (client.connected() && !client.available()) {
+        while (client.connected() && !client.available()) {
           delay(100);
           SerialMon.print('.');
-        };*/
+        };
         SerialMon.println("Received data: ");
         // Skip all headers
         //client.find("\r\n\r\n");
@@ -794,6 +794,7 @@ boolean send_data_modem(String cadena, boolean step_retry) {
           timeout = millis();
           //}
         }
+        */
         SerialMon.println();
         client.stop();
         if(debug)
@@ -802,12 +803,12 @@ boolean send_data_modem(String cadena, boolean step_retry) {
         modem.gprsDisconnect();
         if(debug)
           SerialMon.println(F("GPRS disconnected"));
-        if(debug) {
+        /*if(debug) {
           SerialMon.println(F("************************"));
           SerialMon.print  (F("Received: "));
           SerialMon.print(bytesReceived);
           SerialMon.println(F(" bytes"));
-        }
+        }*/
         return true;
     }
   } 
