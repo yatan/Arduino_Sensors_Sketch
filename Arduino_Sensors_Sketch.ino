@@ -96,7 +96,7 @@ enum option_lux_type {  // Valid option_lux_type
   lux_ldr,
   lux_BH1750
 };
-const option_lux_type option_lux = lux_none; // No sensor | ldr sensor | lux BH1750
+const option_lux_type option_lux = lux_BH1750; // No sensor | ldr sensor | lux BH1750
 enum option_internet_type { // Valid internet types
   internet_none,
   internet_ethernet,
@@ -166,10 +166,10 @@ int array_pir[num_PIR];
 // Array of DO sensors [R,G,B,RGB]
 float array_do1[4];
 BH1750 ir_led1(0x23);    //Si el ADDR està inactiu
-// Define lux sensor Type
-#if option_lux == lux_BH1750  // Lux sensor with BH1750
-BH1750 lux_sensor(0x5C);    //Si el ADDR està amb més de 0.7V
-#endif
+// Lux sensor with BH1750
+BH1750 lux_sensor(0x5C);      //Si el ADDR està amb més de 0.7V
+const int pin_lux_addr = 36;  // Pin ADDR
+
 // Lux ambient value
 float lux;
 // Last time sended data
@@ -643,7 +643,10 @@ boolean send_data_server() {
   
   // Append Lux sensors
   if(option_lux != lux_none) {
-    cadena += "&ldr1=";
+    if(option_lux == lux_ldr)
+      cadena += "&ldr1=";
+    else if(option_lux == lux_BH1750)
+      cadena += "&lux1=";
     cadena += lux;
   }  
 
@@ -744,7 +747,7 @@ boolean send_data_modem(String cadena, boolean step_retry) {
   if (connect_network()) {
     // Network OK
     SerialMon.print("Connecting to ");
-    SerialMon.print(apn);
+    SerialMon.println(apn);
     if (!modem.gprsConnect(apn, user, pass)) {
       SerialMon.println(F("GRPS [fail]"));
       delay(1000);
@@ -915,6 +918,9 @@ void setup() {
     ; // wait for serial port to connect. Needed for native USB port only
   }
 
+  // Initialize the I2C bus (BH1750 library doesn't do this automatically)
+  Wire.begin();
+
   // Comprovació que el numero sensors de temperatura sigui parell
   if( (num_T % 2) != 0 ) {
     // if(debug) // Mostrar sempre el error per Serial
@@ -969,6 +975,9 @@ void setup() {
 
   // Initialize BH1750 light sensor
   if(option_lux == lux_BH1750) {
+    pinMode(pin_lux_addr, OUTPUT);
+    digitalWrite(pin_lux_addr, HIGH);
+    delay(200);
     if (lux_sensor.begin(BH1750::CONTINUOUS_HIGH_RES_MODE_2)) {
       if(debug)
         Serial.println(F("Light BH1750 sensor started"));
