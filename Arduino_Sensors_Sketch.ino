@@ -897,7 +897,7 @@ void loop() {
 
 
   // END Loop()
-  delay(10000);
+  delay(60 * 1000); // 60s * 1000ms
   //Serial.flush();
 }
 
