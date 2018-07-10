@@ -33,7 +33,8 @@
 // Set serial for debug console (to the Serial Monitor, speed 115200)
 #define SerialMon Serial
 // Uncomment this if you want to see all AT commands
-//#define DUMP_AT_COMMANDS
+#define DUMP_AT_COMMANDS
+   #include <StreamDebugger.h>
 
 // Includes
 #include <SD.h>
@@ -55,7 +56,7 @@ const boolean debug = true;
 AUTHENTICATION ARDUINO
 *****/
 //Define de identity of Arduino
-const int id_arduino = 1;
+const int id_arduino = 12;
 
 /****
 NETWORK SETTINGS 
@@ -70,9 +71,9 @@ const byte mac[] = {
 
 // Your GPRS credentials
 // Leave empty, if missing user or pass
-const char apn[]  = "internet";
-const char user[] = "";
-const char pass[] = "";
+const char apn[]  = "movistar.es";
+const char user[] = "movistar";
+const char pass[] = "movistar";
 
 
 /*
@@ -85,7 +86,7 @@ const char pass[] = "";
  */
 
 const int num_T = 4;    // Temperature of the culture. Sensor DS18B20.MAX 6
-						            // T1_s T1_b -- T2_s T2_b = 4
+                        // T1_s T1_b -- T2_s T2_b = 4
 const int num_DHT = 1;  // Humidity and temperature ambient sensor. MAX 3
 #define DHTTYPE DHT22   // Type of DHT sensor DHT11 - DHT22
 const int num_PIR = 1;  // PIR movement sensor. MAX 3
@@ -105,7 +106,7 @@ enum option_internet_type { // Valid internet types
 };
 const option_internet_type option_internet = internet_gprs; // None | Ethernet | GPRS Modem | Wifi <-- Why not ? Dream on it
 const boolean option_LCD = true; // if LCD 20x04 possible (=1) or not (=0)
-const boolean option_SD = false;   //if SD connexion posible (=1) or not (=0)
+const boolean option_SD = true;   //if SD connexion posible (=1) or not (=0)
 const boolean option_clock = true; //if clock posible (=1) or not (=0)
 
 /*
@@ -125,8 +126,8 @@ const int ldr_pin = 3;                // LDR pin (Analog)
 #endif
       /*   DIGITAL PINS  */
 #define pin_onewire 3                 // where 1-wire is connected
-#define pin_sd_card 10                 // Pin lector SD
-const int pins_rgb[3] = {5,6,7};      // DO RGB Laser Pins (Digital)
+#define pin_sd_card 4                 // Pin lector SD
+const int pins_rgb[3] = {24,25,26};      // DO RGB Laser Pins (Digital)
 const int pins_dht[num_DHT] = {8};    // DHT Pins
 const int pins_pir[num_PIR] = {9};    // PIR Pins
 #define SerialAT Serial2              // Serial port for GPRS Modem
@@ -149,7 +150,7 @@ DallasTemperature sensorDS18B20(&oneWireObjeto);
 // Array de temperatures amb tamany num_temp sensors assignats
 float array_temps[num_T];
 // LCD I2C
-#define I2C_ADDR    0x27                    // LCD I2C address
+#define I2C_ADDR    0x3F                 // LCD I2C address
 LiquidCrystal_I2C lcd(I2C_ADDR, 20, 4);     // LCD Type Columns * Lines
 // RTC DS3231 (clock sensor)
 RTC_DS3231 rtc;
@@ -867,13 +868,13 @@ void loop() {
       array_pir[i] = 1;
     else
       array_pir[i] = 0;
-  }	
+  } 
   
   //Capture DO values (Red, Green, Blue, and White)
-	if(num_DO > 0) {
-	  capture_DO();	
+  if(num_DO > 0) {
+    capture_DO(); 
     delay(1000);
-	}	
+  } 
   
   if(option_LCD) {
     mostra_LCD();
@@ -897,7 +898,7 @@ void loop() {
 
 
   // END Loop()
-  delay(60 * 1000); // 60s * 1000ms
+  delay(60000); // 60s * 1000ms
   //Serial.flush();
 }
 
@@ -1004,7 +1005,7 @@ void setup() {
       lcd.print(getDate());
     }
     lcd.setCursor ( 0, 3 );        // go to the 3nd line
-    lcd.print("LOADING...");
+    lcd.print("Getting data...");
   }
 
   // Inicialitza SD en cas que n'hi haigui
@@ -1042,7 +1043,7 @@ void setup() {
         Serial.println(getDateTime());
     }
     // Setting RTC time for first time programing RTC
-    //rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+  //  rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
   }  
 
   // Initialize Ethernet shield
