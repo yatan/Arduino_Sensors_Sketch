@@ -33,8 +33,7 @@
 // Set serial for debug console (to the Serial Monitor, speed 115200)
 #define SerialMon Serial
 // Uncomment this if you want to see all AT commands
-#define DUMP_AT_COMMANDS
-   #include <StreamDebugger.h>
+// #define DUMP_AT_COMMANDS
 
 // Includes
 #include <SD.h>
@@ -56,7 +55,7 @@ const boolean debug = true;
 AUTHENTICATION ARDUINO
 *****/
 //Define de identity of Arduino
-const int id_arduino = 12;
+const int id_arduino = 1;
 
 /****
 NETWORK SETTINGS 
@@ -71,9 +70,9 @@ const byte mac[] = {
 
 // Your GPRS credentials
 // Leave empty, if missing user or pass
-const char apn[]  = "movistar.es";
-const char user[] = "movistar";
-const char pass[] = "movistar";
+const char apn[]  = "internet";
+const char user[] = "";
+const char pass[] = "";
 
 
 /*
@@ -150,7 +149,7 @@ DallasTemperature sensorDS18B20(&oneWireObjeto);
 // Array de temperatures amb tamany num_temp sensors assignats
 float array_temps[num_T];
 // LCD I2C
-#define I2C_ADDR    0x3F                 // LCD I2C address
+#define I2C_ADDR    0x3F                    // LCD I2C address 0x27 - Alter address
 LiquidCrystal_I2C lcd(I2C_ADDR, 20, 4);     // LCD Type Columns * Lines
 // RTC DS3231 (clock sensor)
 RTC_DS3231 rtc;
@@ -216,10 +215,16 @@ String getDateTime()
     hora += '/';
     hora += now.year();
     hora += " ";
+    if(now.hour() < 10)     // For hours less than 2 digits
+      hora += "0";
     hora += now.hour();
     hora += ':';
+    if(now.minute() < 10)   // For minute less than 2 digits
+      hora += "0";    
     hora += now.minute();
     hora += ':';
+    if(now.second() < 10)   // For second less than 2 digits
+      hora += "0";    
     hora += now.second();
   }
   return hora;
@@ -232,11 +237,13 @@ String getTime()
   // En cas que no hi haigui RTC retorna cadena buida
   if(option_clock) {
     DateTime now = rtc.now();
+    if(now.hour() < 10)     // For hours less than 2 digits
+      hora += "0";
     hora += now.hour();
     hora += ':';
+    if(now.minute() < 10)   // For minute less than 2 digits
+      hora += "0";    
     hora += now.minute();
-    hora += ':';
-    hora += now.second();
   }
   return hora;
 }
@@ -687,7 +694,7 @@ boolean send_data_server() {
   }  
   
   if(debug) {
-    Serial.print("Server petition: ");
+    Serial.print(F("Server petition: "));
     Serial.println(cadena);
   }
 
@@ -753,7 +760,7 @@ boolean send_data_modem(String cadena, boolean step_retry) {
       SerialMon.println(F("GRPS [fail]"));
       delay(1000);
       if(step_retry == false) {
-        Serial.println("[Modem] Retrying connection !");
+        Serial.println(F("[Modem] Retrying connection !"));
         send_data_modem(cadena, true);  // Reconnect modem and init again
       }      
       return false;
@@ -770,7 +777,7 @@ boolean send_data_modem(String cadena, boolean step_retry) {
       SerialMon.println(F("Server [fail]"));
       delay(1000);
       if(step_retry == false) {
-        Serial.println("[Modem] Retrying connection !");
+        Serial.println(F("[Modem] Retrying connection !"));
         send_data_modem(cadena, true);  // Reconnect modem and init again
       }      
       return false;
@@ -819,10 +826,10 @@ boolean send_data_modem(String cadena, boolean step_retry) {
       return true;
   }
   else {
-    Serial.println("[Modem] Fail !");
+    Serial.println(F("[Modem] Fail !"));
     // Try one more time, if continue fails, continue
     if(step_retry == false) {
-      Serial.println("[Modem] Retrying connection !");
+      Serial.println(F("[Modem] Retrying connection !"));
       send_data_modem(cadena, true);  
     }
     return false; 
@@ -842,7 +849,7 @@ boolean send_data_modem(String cadena, boolean step_retry) {
 void loop() {
   // Start loop
   if(debug)
-    Serial.println("Capturing data...");
+    Serial.println(F("Capturing data..."));
 
   // Si tenim sondes de temperatura
   if(num_T > 0) {
@@ -937,7 +944,7 @@ void setup() {
     if(sensorDS18B20.getDeviceCount() != num_T) {
       Serial.print(F("[Error] Incorrect number DS18B20 Devices Detected ! ["));
       Serial.print(sensorDS18B20.getDeviceCount());
-      Serial.print("] of: ");
+      Serial.print(F("] of: "));
       Serial.println(num_T);
     }
   }
@@ -948,9 +955,9 @@ void setup() {
       array_DHT[i] = new DHT(pins_dht[i], DHTTYPE);
       // Init DHT
       if(debug) {
-        Serial.print("Initializing DHT Sensor ");
+        Serial.print(F("Initializing DHT Sensor "));
         Serial.print(i);
-        Serial.println(" ...");
+        Serial.println(F(" ..."));
       }
       array_DHT[i]->begin();
     }
@@ -1057,7 +1064,7 @@ void setup() {
     
     // print the Ethernet board/shield's IP address:
     if(debug) {
-      Serial.print("My IP address: ");
+      Serial.print(F("My IP address: "));
       Serial.println(Ethernet.localIP());
     }
   }
