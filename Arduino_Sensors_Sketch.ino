@@ -170,6 +170,13 @@ BH1750 ir_led1(0x23);    //Si el ADDR està inactiu
 BH1750 lux_sensor(0x5C);      //Si el ADDR està amb més de 0.7V
 const int pin_lux_addr = 36;  // Pin ADDR
 
+DeviceAddress sensor_t1_b = {0x28, 0xA8, 0xF8, 0xE7, 0x08, 0x00, 0x00, 0x91};
+DeviceAddress sensor_t1_s = {0x28, 0x6F, 0xB6, 0xC6, 0x08, 0x00, 0x00, 0x3F};
+DeviceAddress sensor_t2_b = {0x28, 0xA4, 0x29, 0xE6, 0x08, 0x00, 0x00, 0xF0};
+DeviceAddress sensor_t2_s = {0x28, 0x45, 0x92, 0xE6, 0x08, 0x00, 0x00, 0xD1};
+
+DeviceAddress* array_tSensor_addrs[num_T];
+
 // Lux ambient value
 float lux;
 // Last time sended data
@@ -264,16 +271,22 @@ String getDate()
   return hora;
 }
 
-
+// Setup DS18B20 array address
+void setup_DS18B20_addr() {
+  array_tSensor_addrs[0] = &sensor_t1_b;
+  array_tSensor_addrs[1] = &sensor_t1_s;
+  array_tSensor_addrs[2] = &sensor_t2_b;
+  array_tSensor_addrs[3] = &sensor_t1_s;
+}
 
 // Captura les temperatures via array de sensors
-void capture_temps(){
+void capture_temps() {
    // Requests culture temperatures from oneWire Bus
    sensorDS18B20.requestTemperatures();
   // Read temperatures array
   for(int i = 0; i < num_T; i++)
   {
-    array_temps[i] = sensorDS18B20.getTempCByIndex(i);
+    array_temps[i] = sensorDS18B20.getTempC(*array_tSensor_addrs[i]);
     delay(10);
   }
 }
