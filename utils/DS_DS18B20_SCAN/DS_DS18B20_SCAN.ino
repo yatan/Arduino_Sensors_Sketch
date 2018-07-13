@@ -26,8 +26,8 @@ void setup() {
 
 void loop() {
     // Si hemos encontrado uno mostramos su dirección
-    
-    for(int j=1; j<=numeroSensoresConectados; j++){
+    sensorDS18B20.requestTemperatures();
+    for(int j=0; j<numeroSensoresConectados; j++){
         
         // Tipo definido como una array de 8 bytes (uint8_t)
         DeviceAddress sensorTemperatura;
