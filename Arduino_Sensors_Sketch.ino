@@ -56,6 +56,7 @@ AUTHENTICATION ARDUINO
 *****/
 //Define de identity of Arduino
 const int id_arduino = 1;
+const int pin_arduino = 1234;
 
 /****
 NETWORK SETTINGS 
@@ -183,6 +184,11 @@ float lux;
 String last_send;
 // LCD view counter
 int counts_lcd = 0;
+
+// Var for check time to next loop
+uint32_t time_next_loop;
+// 3 minute delay
+const uint32_t delay_next_loop = 3L * 60L * 1000L;
 
 // GPRS Modem
 #ifdef DUMP_AT_COMMANDS
@@ -642,6 +648,10 @@ boolean send_data_server() {
   cadena += "idarduino=";
   cadena += id_arduino;
 
+  // Append PIN for that ID
+  cadena += "&pin=";
+  cadena += pin_arduino;
+
   // Append temperatures
   for( int i=0; i<num_T; i++){
     cadena += "&temp";
@@ -864,6 +874,13 @@ void loop() {
   if(debug)
     Serial.println(F("Capturing data..."));
 
+  // Set next timer loop for actual time + delay time (3mins)
+  if(option_clock) {
+    DateTime now = rtc.now();
+    time_next_loop = now.unixtime() + delay_next_loop;
+    delay(25);
+  }
+
   // Si tenim sondes de temperatura
   if(num_T > 0) {
     capture_temps();
@@ -915,10 +932,21 @@ void loop() {
     save_to_SD();
   }
 
-
-
   // END Loop()
+  // If have RTC clock make timer delay if not internal delay
+  if(option_clock) 
+  {
+    DateTime now;
+    do {
+      now = rtc.now();
+      delay(30000);     // Wait 30 seconds more
+    } while(now.unixtime() < time_next_loop)    // Wait until timer passed
+  }
+  else
+  {
   delay(60000); // 60s * 1000ms
+  }
+
   //Serial.flush();
 }
 
@@ -960,6 +988,7 @@ void setup() {
       Serial.print(F("] of: "));
       Serial.println(num_T);
     }
+    setup_DS18B20_addr();
   }
 
   // Declaring array of DHT22
