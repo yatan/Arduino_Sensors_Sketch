@@ -940,7 +940,7 @@ void loop() {
     do {
       now = rtc.now();
       delay(30000);     // Wait 30 seconds more
-    } while(now.unixtime() < time_next_loop)    // Wait until timer passed
+    } while(now.unixtime() < time_next_loop);    // Wait until timer passed
   }
   else
   {
