@@ -171,10 +171,10 @@ BH1750 ir_led1(0x23);    //Si el ADDR està inactiu
 BH1750 lux_sensor(0x5C);      //Si el ADDR està amb més de 0.7V
 const int pin_lux_addr = 36;  // Pin ADDR
 
-DeviceAddress sensor_t1_b = {0x28, 0xA8, 0xF8, 0xE7, 0x08, 0x00, 0x00, 0x91};
-DeviceAddress sensor_t1_s = {0x28, 0x6F, 0xB6, 0xC6, 0x08, 0x00, 0x00, 0x3F};
-DeviceAddress sensor_t2_b = {0x28, 0xA4, 0x29, 0xE6, 0x08, 0x00, 0x00, 0xF0};
-DeviceAddress sensor_t2_s = {0x28, 0x45, 0x92, 0xE6, 0x08, 0x00, 0x00, 0xD1};
+DeviceAddress sensor_t1_b = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+DeviceAddress sensor_t1_s = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+DeviceAddress sensor_t2_b = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+DeviceAddress sensor_t2_s = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
 DeviceAddress* array_tSensor_addrs[num_T];
 
@@ -188,7 +188,9 @@ int counts_lcd = 0;
 // Var for check time to next loop
 uint32_t time_next_loop;
 // 3 minute delay
-const uint32_t delay_next_loop = 3L * 60L * 1000L;
+const uint32_t delay_next_loop = 3L * 60L;
+// 20 seconds step delay
+const unsigned long step_delay_time = 20L * 1000L;
 
 // GPRS Modem
 #ifdef DUMP_AT_COMMANDS
@@ -919,14 +921,22 @@ void loop() {
   }
   
   if(option_internet != internet_none) {
-    send_data_server();
+    if(send_data_server()) {
+      // Si s'envia correctament actualitzar last_send
+      delay(200);
     last_send = getTime();
+      delay(100);
+      last_send += " OK";      
+      mostra_LCD();
   }
-
-  /*if( sende_data == true ) {
-    
+    else {
+      delay(200);
+      last_send = getTime();
+      delay(100);
+      last_send += " FAIL";      
     mostra_LCD();
-  }*/
+    }
+  }
 
   if(option_SD) {
     save_to_SD();
@@ -939,8 +949,10 @@ void loop() {
     DateTime now;
     do {
       now = rtc.now();
-      delay(30000);     // Wait 30 seconds more
+      Serial.print(".");
+      delay(step_delay_time);                    // Wait (step_delay_time) seconds more
     } while(now.unixtime() < time_next_loop);    // Wait until timer passed
+    Serial.println(".");
   }
   else
   {
@@ -1092,7 +1104,7 @@ void setup() {
         Serial.println(getDateTime());
     }
     // Setting RTC time for first time programing RTC
-  //  rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+    // rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
   }  
 
   // Initialize Ethernet shield
