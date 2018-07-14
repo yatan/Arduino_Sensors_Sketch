@@ -125,6 +125,7 @@ const int pins_do[num_DO] = {2};      // DO Ps (Analog)
 const int ldr_pin = 3;                // LDR pin (Analog)
 #endif
       /*   DIGITAL PINS  */
+const int pin_switch_calibracio = 22;
 #define pin_onewire 3                 // where 1-wire is connected
 #define pin_sd_card 4                 // Pin lector SD
 const int pins_rgb[3] = {24,25,26};      // DO RGB Laser Pins (Digital)
@@ -876,6 +877,33 @@ void loop() {
   if(debug)
     Serial.println(F("Capturing data..."));
 
+  // If pin calibration ph switch is HIGH
+  while( digitalRead(pin_switch_calibracio) == HIGH ) {
+    if(debug)
+      Serial.println(F("Starting calibration mode..."));
+    char buffer_L[6];              // String buffer
+    
+    lcd.clear();                  // Clear screen
+    lcd.home ();                  // Linea 1
+    lcd.print("pH Calibration");             
+
+    if(num_pH > 0) {
+      lcd.setCursor ( 0, 1 );       // go to the 2nd line
+      lcd.print("pH1:");
+      dtostrf(capture_ph(pins_ph[0]),4,2,buffer_L);
+      lcd.print(buffer_L);
+    }
+    if(num_pH > 1) {
+      lcd.setCursor ( 0, 2 );       // go to the 3rd line
+      lcd.print("pH2:");
+      dtostrf(capture_ph(pins_ph[1]),4,2,buffer_L);
+      lcd.print(buffer_L);
+    }
+    lcd.setCursor ( 3, 3 );       // go to the 4th line
+    lcd.print("OpenSpirulina");
+    delay(1000);
+  }
+
   // Set next timer loop for actual time + delay time (3mins)
   if(option_clock) {
     DateTime now = rtc.now();
@@ -978,7 +1006,10 @@ void setup() {
   {
     ; // wait for serial port to connect. Needed for native USB port only
   }
-
+  
+  // Establint pin entrada per el switch de calibracio
+  pinMode(pin_switch_calibracio, INPUT);
+  
   // Initialize the I2C bus (BH1750 library doesn't do this automatically)
   Wire.begin();
 
