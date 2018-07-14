@@ -125,7 +125,7 @@ const int pins_do[num_DO] = {2};      // DO Ps (Analog)
 const int ldr_pin = 3;                // LDR pin (Analog)
 #endif
       /*   DIGITAL PINS  */
-const int pin_switch_calibracio = 22; // Pin for pH calibration switch
+const int pin_switch_calibracio = 30; // Pin for pH calibration switch
 #define pin_onewire 3                 // where 1-wire is connected
 #define pin_sd_card 4                 // Pin lector SD
 const int pins_rgb[3] = {24,25,26};      // DO RGB Laser Pins (Digital)
@@ -445,6 +445,19 @@ float capture_lux() {
   #elif option_lux == lux_ldr           // Return Lux value with LDR
     return analogRead(ldr_pin);
   #endif
+}
+
+void lcd_init_msg() {
+    lcd.clear();
+    lcd.home ();                   // go home
+    lcd.setCursor ( 3, 0 );        
+    lcd.print("OpenSpirulina");
+    if(option_clock) {
+      lcd.setCursor ( 0, 2 );        // go to the 2nd line
+      lcd.print(getDate());
+    }
+    lcd.setCursor ( 0, 3 );        // go to the 3nd line
+    lcd.print("Getting data...");
 }
 
 // Capture data in calibration mode
@@ -906,8 +919,10 @@ void loop() {
   // If pin calibration ph switch is HIGH
   while( digitalRead(pin_switch_calibracio) == HIGH ) {
     do_a_calibration_ph();
-    delay(1000);
+    delay(10000);
   }
+  // Show init LCD msg
+  lcd_init_msg();
 
   // Set next timer loop for actual time + delay time (3mins)
   if(option_clock) {
@@ -1094,15 +1109,7 @@ void setup() {
     lcd.begin (20,4);
     lcd.backlight();
     lcd.setBacklight(HIGH);
-    lcd.home ();                   // go home
-    lcd.setCursor ( 3, 0 );        
-    lcd.print("OpenSpirulina");
-    if(option_clock) {
-      lcd.setCursor ( 0, 2 );        // go to the 2nd line
-      lcd.print(getDate());
-    }
-    lcd.setCursor ( 0, 3 );        // go to the 3nd line
-    lcd.print("Getting data...");
+    lcd_init_msg();
   }
 
   // Inicialitza SD en cas que n'hi haigui
