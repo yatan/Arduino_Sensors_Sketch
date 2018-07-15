@@ -203,7 +203,10 @@ const unsigned long step_delay_time = 20L * 1000L;
   TinyGsm modem(SerialAT);
 #endif
 
+// GSM Modem client
 TinyGsmClient client(modem);
+// Ethernet Network client
+EthernetClient eth_client;
 
 // File handler to SD
 File myFile;
@@ -777,6 +780,30 @@ boolean send_data_server() {
 }
 
 boolean send_data_ethernet(String cadena) {
+  eth_eth_client.stop();
+  // if there's a successful connection:
+  if (eth_client.connect(server, 80))
+  {
+    if (debug)
+      Serial.println(F("Connecting ethernet..."));
+
+    if(debug)
+      Serial.println(cadena);
+    
+    // Send string to internet  
+    eth_client.println(cadena);
+    
+    eth_client.println("Host: sensors.openspirulina.com");
+    eth_client.println("User-Agent: arduino-ethernet-1");
+    eth_client.println("Connection: close");
+    eth_client.println();
+  }
+  else
+  {
+    // if you couldn't make a connection:
+    Serial.println("Connection Failed");
+    return false;
+  }
   return true;
 }
 
