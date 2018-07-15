@@ -174,6 +174,7 @@ const int pin_lux_addr = 36;  // Pin ADDR
 
 DeviceAddress sensor_t1_b = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 DeviceAddress sensor_t1_s = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+
 DeviceAddress sensor_t2_b = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 DeviceAddress sensor_t2_s = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
@@ -189,7 +190,7 @@ int counts_lcd = 0;
 // Var for check time to next loop
 uint32_t time_next_loop;
 // 3 minute delay
-const uint32_t delay_next_loop = 3L * 60L;
+const uint32_t delay_next_loop = 5L * 60L;
 // 20 seconds step delay
 const unsigned long step_delay_time = 20L * 1000L;
 
