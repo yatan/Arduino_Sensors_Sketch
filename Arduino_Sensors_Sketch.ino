@@ -780,7 +780,7 @@ boolean send_data_server() {
 }
 
 boolean send_data_ethernet(String cadena) {
-  eth_eth_client.stop();
+  eth_client.stop();
   // if there's a successful connection:
   if (eth_client.connect(server, 80))
   {
