@@ -553,7 +553,7 @@ void init_SD_FileName() {
   }
 
   if (debug)
-    Serial.println("Writing in file: " + fileName);
+    Serial.println("Filename to write: " + fileName);
 }
 
 // Writing title headers to file
@@ -801,7 +801,7 @@ boolean send_data_ethernet(String cadena) {
   else
   {
     // if you couldn't make a connection:
-    Serial.println("Connection Failed");
+    Serial.println(F("Connection Failed"));
     return false;
   }
   return true;
@@ -1182,6 +1182,8 @@ void setup() {
   if(option_internet == internet_ethernet) {
     // give the ethernet module time to boot up:
     delay(2000);
+    if(debug)
+      Serial.print(F("Starting Ethernet Module"));
     // start the Ethernet connection using a fixed IP address and DNS server:
     // Ethernet.begin(mac, ip, myDns, gateway, subnet);
     // DHCP IP ( For automatic IP )
