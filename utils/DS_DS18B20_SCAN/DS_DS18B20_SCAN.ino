@@ -2,7 +2,7 @@
 #include <DallasTemperature.h>
 
 // Pin donde se conecta el bus 1-Wire
-const int pinDatosDQ = 3;
+const int pinDatosDQ = 2;
 
 // Instancia a las clases OneWire y DallasTemperature
 OneWire oneWireObjeto(pinDatosDQ);
@@ -25,6 +25,9 @@ void setup() {
 }
 
 void loop() {
+  numeroSensoresConectados = sensorDS18B20.getDeviceCount();
+    Serial.print(numeroSensoresConectados);
+    Serial.println(" sensores");
     // Si hemos encontrado uno mostramos su dirección
     sensorDS18B20.requestTemperatures();
     for(int j=0; j<numeroSensoresConectados; j++){
@@ -50,6 +53,6 @@ void loop() {
         Serial.print(" Temperatura: ");
         Serial.println(sensorDS18B20.getTempC(sensorTemperatura));
     }   
-  Serial.println();
+  //Serial.println();
   delay(5000);
 }
