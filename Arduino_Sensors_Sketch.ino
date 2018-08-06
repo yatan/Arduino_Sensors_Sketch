@@ -92,6 +92,7 @@ const int num_DHT = 1;  // Humidity and temperature ambient sensor. MAX 3
 const int num_PIR = 1;  // PIR movement sensor. MAX 3
 const int num_DO = 1;   // Optical Density Sensor Module made by OpenSpirulina includes a RGB led + BH1750 lux sensor
 const int num_pH = 1;   // pH sensor. MAX 3
+const int num_CO2 = 1;  // CO2 sensor MAX ?
 enum option_lux_type {  // Valid option_lux_type
   lux_none,
   lux_ldr,
@@ -121,6 +122,7 @@ const boolean option_clock = true; //if clock posible (=1) or not (=0)
       /*   ANALOG PINS  */
 const int pins_ph[num_pH] = {1};      // pH Pins (Analog)
 const int pins_do[num_DO] = {2};      // DO Ps (Analog)
+const int pins_co2[num_CO2] = {4};     // CO2 pin (Analog)
 #if option_lux == lux_ldr             // Lux sensor with LDR
 const int ldr_pin = 3;                // LDR pin (Analog)
 #endif
@@ -167,6 +169,8 @@ float array_ph[num_pH];
 int array_pir[num_PIR];
 // Array of DO sensors [R,G,B,RGB]
 float array_do1[4];
+// Array of CO2 sensors
+float array_co2[num_CO2];
 BH1750 ir_led1(0x23);    //Si el ADDR està inactiu
 // Lux sensor with BH1750
 BH1750 lux_sensor(0x5C);      //Si el ADDR està amb més de 0.7V
@@ -189,8 +193,8 @@ int counts_lcd = 0;
 
 // Var for check time to next loop
 uint32_t time_next_loop;
-// 3 minute delay
-const uint32_t delay_next_loop = 5L * 60L;
+// 10 minute delay
+const uint32_t delay_next_loop = 10L * 60L;
 // 20 seconds step delay
 const unsigned long step_delay_time = 20L * 1000L;
 
@@ -451,6 +455,28 @@ float capture_lux() {
   #endif
 }
 
+// Capture CO2
+void capture_CO2() {
+  for(int i=0; i<num_CO2; i++) {
+    //Read voltage
+    int sensorValue = analogRead(pins_co2[i]);  
+    // The analog signal is converted to a voltage 
+    float voltage = sensorValue*(5000/1024.0);   
+    if(voltage == 0)
+    {
+      Serial.println(F("[CO2] Fault"));
+    }
+    else if(voltage < 400)
+    {
+      Serial.println(F("[CO2] Preheating"));
+    }    
+    int voltage_diference=voltage-400;
+    float concentration=voltage_diference*50.0/16.0;
+    // Save voltatge value
+    array_co2[i] = concentration;
+  }
+}
+
 void lcd_init_msg() {
     lcd.clear();
     lcd.home ();                   // go home
@@ -617,6 +643,12 @@ void write_SD_Headers() {
       myFile.print(i);
       myFile.print(F("_RGB#"));                  
     }
+    // CO2 Sensors
+    for(int i=0; i<num_CO2; i++) {
+      myFile.print(F("CO2_"));
+      myFile.print(i);
+      myFile.print(F("#"));
+    }    
     // End of line
     myFile.println(F(""));  
     // close the file:
@@ -668,6 +700,11 @@ void save_to_SD() {
         myFile.print(array_do1[i]);     // 0-1-2-3
         myFile.print(F("#"));          
       }
+    }
+    // CO2 Sensors
+    for(int i=0; i<num_CO2; i++) {
+      myFile.print(array_co2[i]);
+      myFile.print(F("#"));
     }
 
     // End of line
@@ -761,6 +798,14 @@ boolean send_data_server() {
     else if(array_pir[i] == 1)
       cadena += "1";
   }  
+  
+  // Append CO2 Sensors
+  for(int i=0; i<num_CO2; i++) {
+    cadena += "&co2";
+    cadena += i+1;
+    cadena += "=";
+    cadena += array_co2[i];
+  }
   
   if(debug) {
     Serial.print(F("Server petition: "));
@@ -991,6 +1036,12 @@ void loop() {
     delay(1000);
   } 
   
+  // Capture CO2 concentration
+  if(num_CO2 > 0) {
+    capture_CO2();
+  }
+
+  // END of capturing values
   if(option_LCD) {
     mostra_LCD();
     delay(1000);
@@ -1010,7 +1061,7 @@ void loop() {
       last_send = getTime();
       delay(100);
       last_send += " FAIL";      
-    mostra_LCD();
+      mostra_LCD();
     }
   }
 
@@ -1032,9 +1083,11 @@ void loop() {
   }
   else
   {
-  delay(60000); // 60s * 1000ms
+    // Delay 10 minutes
+    for(int j=0; j<10; j++) {
+      delay(60000); // 60s * 1000ms
+    }
   }
-
   //Serial.flush();
 }
 
