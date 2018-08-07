@@ -23,6 +23,9 @@
  * 
  * GSM/GPRS A6 modem library:
  * https://github.com/vshymanskyy/TinyGSM
+ * 
+ * Arduino QuickSort library:
+ * https://github.com/luisllamasbinaburo/Arduino-QuickSort
  *
  */
 
@@ -46,6 +49,7 @@
 #include <BH1750.h>
 #include <LiquidCrystal_I2C.h>
 #include <TinyGsmClient.h>
+#include "QuickSortLib.h"
 
 
 // Debug mode for verbose info on serial monitor
@@ -361,6 +365,17 @@ boolean detecta_PIR(int pin) {
 }
 
 // Functions for Optical Density (DO)
+
+void sort_and_filter(float *llistat, float *llistat_output) {
+  // Define array without first and last n elements
+  //float llistat_output[samples_number - 2];
+  //llistat.sort();
+  QuickSort<float>::SortAscending(llistat, 0, samples_number);
+  // Insert values to final array
+  for(int i = 1; i<samples_number-1; i++) {
+    llistat_output[i-1] = llistat[i];
+  }
+}
 
 // Red light values for DO.
 float R1_led()
