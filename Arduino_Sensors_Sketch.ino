@@ -297,7 +297,7 @@ void setup_DS18B20_addr() {
   array_tSensor_addrs[0] = &sensor_t1_b;
   array_tSensor_addrs[1] = &sensor_t1_s;
   array_tSensor_addrs[2] = &sensor_t2_b;
-  array_tSensor_addrs[3] = &sensor_t1_s;
+  array_tSensor_addrs[3] = &sensor_t2_s;
 }
 
 // Captura les temperatures via array de sensors
