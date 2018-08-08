@@ -24,8 +24,8 @@
  * GSM/GPRS A6 modem library:
  * https://github.com/vshymanskyy/TinyGSM
  * 
- * Arduino QuickSort library:
- * https://github.com/luisllamasbinaburo/Arduino-QuickSort
+ * ArduinoSort library:
+ * https://github.com/emilv/ArduinoSort
  *
  */
 
@@ -49,7 +49,7 @@
 #include <BH1750.h>
 #include <LiquidCrystal_I2C.h>
 #include <TinyGsmClient.h>
-#include "QuickSortLib.h"
+#include <ArduinoSort.h>
 
 
 // Debug mode for verbose info on serial monitor
@@ -125,7 +125,7 @@ const boolean option_clock = true; //if clock posible (=1) or not (=0)
 
       /*   ANALOG PINS  */
 const int pins_ph[num_pH] = {1};      // pH Pins (Analog)
-const int pins_do[num_DO] = {2};      // DO Ps (Analog)
+//const int pins_do[num_DO] = {2};      // DO Ps (Analog)
 const int pins_co2[num_CO2] = {4};     // CO2 pin (Analog)
 #if option_lux == lux_ldr             // Lux sensor with LDR
 const int ldr_pin = 3;                // LDR pin (Analog)
@@ -157,7 +157,7 @@ DallasTemperature sensorDS18B20(&oneWireObjeto);
 // Array de temperatures amb tamany num_temp sensors assignats
 float array_temps[num_T];
 // LCD I2C
-#define I2C_ADDR    0x3F                    // LCD I2C address 0x27 - Alter address
+#define I2C_ADDR    0x27                    // LCD I2C address 0x27 - Alter address 0x3F
 LiquidCrystal_I2C lcd(I2C_ADDR, 20, 4);     // LCD Type Columns * Lines
 // RTC DS3231 (clock sensor)
 RTC_DS3231 rtc;
@@ -366,11 +366,11 @@ boolean detecta_PIR(int pin) {
 
 // Functions for Optical Density (DO)
 
-float sort_and_filter(float* llistat) {
+float sort_and_filter(int* llistat) {
   // Define array without first and last n elements
-  float llistat_output=0;
-  //llistat.sort();
-  QuickSort<float>::SortAscending(llistat, 0, samples_number);
+  float llistat_output;
+  // Sort normally
+  sortArray(llistat, samples_number);
   // Insert values to final array
   for(int i = 1; i<samples_number-1; i++) {
     llistat_output += llistat[i];
@@ -384,17 +384,17 @@ float R1_led()
   digitalWrite(pins_rgb[0], HIGH);
   // Llegim valors amb el led obert
   delay(wait_opening_led);
-  float iir1[samples_number];
-  float iir=0;
+  int iirR[samples_number];
+  float iir;
   for (int i=0; i<samples_number; i++) 
   {
-    iir1[i] = ir_led1.readLightLevel();
+    iirR[i] = ir_led1.readLightLevel();
     //iir = iir1[i] + iir;
     delay(500);
   }
   digitalWrite(pins_rgb[0], LOW);
   //return (float)iir / samples_number;
-  iir = sort_and_filter(iir1);
+  iir = sort_and_filter(iirR);
   return iir;
 }
 
@@ -402,18 +402,18 @@ float R1_led()
 float G1_led()
 {
   digitalWrite(pins_rgb[1], HIGH);
-  float iir1[samples_number];
-  float iir=0;
+  int iirG[samples_number];
+  float iir;
   delay(wait_opening_led);
   for (int i=0; i<samples_number; i++) 
   {
-    iir1[i] = ir_led1.readLightLevel();
+    iirG[i] = ir_led1.readLightLevel();
     //iir = iir1 + iir;
     delay(500);
   }
   digitalWrite(pins_rgb[1], LOW);
   //return (float)iir / samples_number;
-  iir = sort_and_filter(iir1);
+  iir = sort_and_filter(iirG);
   return iir;
 }
 
@@ -424,17 +424,17 @@ float B1_led()
   digitalWrite(pins_rgb[2], HIGH);
   // Llegim valors amb el led obert
   delay(wait_opening_led);
-  float iir1[samples_number];
-  float iir=0;
+  int iirB[samples_number];
+  float iir;
   for (int i=0; i<samples_number; i++) 
   {
-    iir1[i] = ir_led1.readLightLevel();
+    iirB[i] = ir_led1.readLightLevel();
     //iir = iir1 + iir;
     delay(500);
   }
   digitalWrite(pins_rgb[2], LOW);
   //return (float)iir / samples_number;
-  iir = sort_and_filter(iir1);
+  iir = sort_and_filter(iirB);
   return iir;
 }
 
@@ -446,8 +446,8 @@ float RGB1_led()
   digitalWrite(pins_rgb[2], HIGH);
   // Llegim valors amb el led obert
   delay(wait_opening_led);
-  float iir1[samples_number];
-  float iir=0;
+  int iir1[samples_number];
+  float iir;
   for (int i=0; i<samples_number; i++) 
   {
     iir1[i] = ir_led1.readLightLevel();
