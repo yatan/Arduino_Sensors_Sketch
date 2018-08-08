@@ -366,15 +366,16 @@ boolean detecta_PIR(int pin) {
 
 // Functions for Optical Density (DO)
 
-void sort_and_filter(float *llistat, float *llistat_output) {
+float sort_and_filter(float* llistat) {
   // Define array without first and last n elements
-  //float llistat_output[samples_number - 2];
+  float llistat_output=0;
   //llistat.sort();
   QuickSort<float>::SortAscending(llistat, 0, samples_number);
   // Insert values to final array
   for(int i = 1; i<samples_number-1; i++) {
-    llistat_output[i-1] = llistat[i];
+    llistat_output += llistat[i];
   }
+  return llistat_output / (samples_number - 2);
 }
 
 // Red light values for DO.
@@ -388,28 +389,32 @@ float R1_led()
   for (int i=0; i<samples_number; i++) 
   {
     iir1[i] = ir_led1.readLightLevel();
-    iir = iir1[i] + iir;
+    //iir = iir1[i] + iir;
     delay(500);
   }
   digitalWrite(pins_rgb[0], LOW);
-  return (float)iir / samples_number;
+  //return (float)iir / samples_number;
+  iir = sort_and_filter(iir1);
+  return iir;
 }
 
 // Green light values for DO.
 float G1_led()
 {
   digitalWrite(pins_rgb[1], HIGH);
-  float iir1=0;
+  float iir1[samples_number];
   float iir=0;
   delay(wait_opening_led);
   for (int i=0; i<samples_number; i++) 
   {
-    iir1 = ir_led1.readLightLevel();
-    iir = iir1 + iir;
+    iir1[i] = ir_led1.readLightLevel();
+    //iir = iir1 + iir;
     delay(500);
   }
   digitalWrite(pins_rgb[1], LOW);
-  return (float)iir / samples_number;
+  //return (float)iir / samples_number;
+  iir = sort_and_filter(iir1);
+  return iir;
 }
 
 
@@ -419,16 +424,18 @@ float B1_led()
   digitalWrite(pins_rgb[2], HIGH);
   // Llegim valors amb el led obert
   delay(wait_opening_led);
-  float iir1=0;
+  float iir1[samples_number];
   float iir=0;
   for (int i=0; i<samples_number; i++) 
   {
-    iir1 = ir_led1.readLightLevel();
-    iir = iir1 + iir;
+    iir1[i] = ir_led1.readLightLevel();
+    //iir = iir1 + iir;
     delay(500);
   }
   digitalWrite(pins_rgb[2], LOW);
-  return (float)iir / samples_number;
+  //return (float)iir / samples_number;
+  iir = sort_and_filter(iir1);
+  return iir;
 }
 
 // White light values for DO.
@@ -439,18 +446,20 @@ float RGB1_led()
   digitalWrite(pins_rgb[2], HIGH);
   // Llegim valors amb el led obert
   delay(wait_opening_led);
-  float iir1=0;
+  float iir1[samples_number];
   float iir=0;
   for (int i=0; i<samples_number; i++) 
   {
-    iir1 = ir_led1.readLightLevel();
-    iir = iir1 + iir;
+    iir1[i] = ir_led1.readLightLevel();
+    //iir = iir1 + iir;
     delay(500);
   }
   digitalWrite(pins_rgb[0], LOW);
   digitalWrite(pins_rgb[1], LOW);
   digitalWrite(pins_rgb[2], LOW);
-  return (float)iir / samples_number;
+  //return (float)iir / samples_number;
+  iir = sort_and_filter(iir1);
+  return iir;
 }
 
 // Capture DO values
