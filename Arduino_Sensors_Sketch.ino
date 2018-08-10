@@ -138,6 +138,7 @@ const int pins_rgb[3] = {24,25,26};      // DO RGB Laser Pins (Digital)
 const int pins_dht[num_DHT] = {8};    // DHT Pins
 const int pins_pir[num_PIR] = {9};    // PIR Pins
 #define SerialAT Serial2              // Serial port for GPRS Modem
+const int pin_lux_addr = 36;  // Pin ADDR
 
 
 /*
@@ -151,6 +152,7 @@ const int pins_pir[num_PIR] = {9};    // PIR Pins
 
 const unsigned long wait_opening_led = 1000; // Waiting ms for opening led
 const int samples_number = 10;        // Number of samples of DO
+const int co2_samples_number = 15;
 
 OneWire oneWireObjeto(pin_onewire);
 DallasTemperature sensorDS18B20(&oneWireObjeto);
@@ -178,7 +180,6 @@ float array_co2[num_CO2];
 BH1750 ir_led1(0x23);    //Si el ADDR està inactiu
 // Lux sensor with BH1750
 BH1750 lux_sensor(0x5C);      //Si el ADDR està amb més de 0.7V
-const int pin_lux_addr = 36;  // Pin ADDR
 
 DeviceAddress sensor_t1_b = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 DeviceAddress sensor_t1_s = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
@@ -479,25 +480,46 @@ float capture_lux() {
   #endif
 }
 
+
+float sort_and_filter_co2(float* llistat) {
+  // Define array without first and last n elements
+  float llistat_output;
+  // Sort normally
+  sortArray(llistat, co2_samples_number);
+  // Descartem els 2 primers i 2 ultims valors
+  for(int i = 2; i<samples_number-2; i++) {
+    llistat_output += llistat[i];
+  }
+  return llistat_output / (co2_samples_number - 4);
+}
+
 // Capture CO2
 void capture_CO2() {
+  if(debug)
+    Serial.println(F("Capturing CO2"));
   for(int i=0; i<num_CO2; i++) {
-    //Read voltage
-    int sensorValue = analogRead(pins_co2[i]);  
-    // The analog signal is converted to a voltage 
-    float voltage = sensorValue*(5000/1024.0);   
-    if(voltage == 0)
-    {
-      Serial.println(F("[CO2] Fault"));
+    // Take co2_samples_number samples of Every co2 sensor
+    float mostres_co2[co2_samples_number];
+    for(int j=0; j<co2_samples_number; j++) {
+      //Read voltage
+      int sensorValue = analogRead(pins_co2[i]);  
+      // The analog signal is converted to a voltage 
+      float voltage = sensorValue*(5000/1024.0);   
+      if(voltage == 0)
+      {
+        Serial.println(F("[CO2] Fault"));
+      }
+      else if(voltage < 400)
+      {
+        Serial.println(F("[CO2] Preheating"));
+      }    
+      int voltage_diference=voltage-400;
+      float concentration=voltage_diference*50.0/16.0;
+      // Save voltatge value
+      mostres_co2[j] = concentration;
+      delay(100);
     }
-    else if(voltage < 400)
-    {
-      Serial.println(F("[CO2] Preheating"));
-    }    
-    int voltage_diference=voltage-400;
-    float concentration=voltage_diference*50.0/16.0;
-    // Save voltatge value
-    array_co2[i] = concentration;
+    array_co2[i] = sort_and_filter_co2(mostres_co2);
   }
 }
 
@@ -1260,7 +1282,7 @@ void setup() {
     // give the ethernet module time to boot up:
     delay(2000);
     if(debug)
-      Serial.print(F("Starting Ethernet Module"));
+      Serial.println(F("Starting Ethernet Module"));
     // start the Ethernet connection using a fixed IP address and DNS server:
     // Ethernet.begin(mac, ip, myDns, gateway, subnet);
     // DHCP IP ( For automatic IP )
