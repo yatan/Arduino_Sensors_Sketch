@@ -724,7 +724,6 @@ void save_to_SD() {
     }
     // Sensors DHT
     for(int i=0; i<num_DHT; i++) {
-      myFile.print(F("#"));
       myFile.print(array_DHT_T[i]);
       myFile.print(F("#"));   
       myFile.print(array_DHT_H[i]);
