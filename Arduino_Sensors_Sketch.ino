@@ -513,7 +513,7 @@ void capture_CO2() {
       {
         Serial.println(F("[CO2] Preheating"));
       }    
-      int voltage_diference=voltage-400;
+      int voltage_diference=voltage-470;
       float concentration=voltage_diference*50.0/16.0;
       // Save voltatge value
       mostres_co2[j] = concentration;
@@ -572,7 +572,7 @@ void mostra_LCD() {
     lcd.setBacklight(HIGH);
     counts_lcd = 0;
   }
-  char buffer_L[6];              // String buffer
+  char buffer_L[8];              // String buffer
 
   lcd.clear();                  // Clear screen
   lcd.home ();                  // Linea 1
@@ -600,6 +600,12 @@ void mostra_LCD() {
     dtostrf(array_ph[1],4,2,buffer_L);
     lcd.print(buffer_L);
   }
+
+  if(num_CO2 > 0) {
+    lcd.print("CO2:");
+    dtostrf(array_co2[0],6,2,buffer_L);
+    lcd.print(buffer_L);
+  }  
 
   lcd.setCursor ( 0, 2 );       // go to the 3rd line
   if(last_send != "") {
