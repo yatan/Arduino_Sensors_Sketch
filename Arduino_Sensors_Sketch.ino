@@ -473,11 +473,10 @@ void capture_DO() {
 
 // Capture Lux ambient
 float capture_lux() {
-  #if option_lux == lux_BH1750          // Return Lux value with BH1750
+  if( option_lux == lux_BH1750 )          // Return Lux value with BH1750
     return lux_sensor.readLightLevel();
-  #elif option_lux == lux_ldr           // Return Lux value with LDR
+  else if( option_lux == lux_ldr )           // Return Lux value with LDR
     return analogRead(ldr_pin);
-  #endif
 }
 
 
