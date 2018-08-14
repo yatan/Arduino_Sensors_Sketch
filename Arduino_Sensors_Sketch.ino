@@ -1129,13 +1129,17 @@ void loop() {
       now = rtc.now();
       Serial.print(".");
       delay(step_delay_time);                    // Wait (step_delay_time) seconds more
-    } while(now.unixtime() < time_next_loop);    // Wait until timer passed
+    } while(now.unixtime() < time_next_loop && digitalRead(pin_switch_calibracio) == LOW);    // Wait until timer passed
     Serial.println(".");
   }
   else
   {
     // Delay 10 minutes
     for(int j=0; j<10; j++) {
+      if( digitalRead(pin_switch_calibracio) == HIGH )
+      {
+        break;
+      }
       delay(60000); // 60s * 1000ms
     }
   }
