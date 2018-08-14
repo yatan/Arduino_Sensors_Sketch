@@ -596,13 +596,13 @@ void mostra_LCD() {
     lcd.print(buffer_L);
   }
   if(num_pH > 1) {
-    lcd.print("pH2:");
+    lcd.print(" pH2:");
     dtostrf(array_ph[1],4,2,buffer_L);
     lcd.print(buffer_L);
   }
 
   if(num_CO2 > 0) {
-    lcd.print("CO2:");
+    lcd.print(" CO2:");
     dtostrf(array_co2[0],6,2,buffer_L);
     lcd.print(buffer_L);
   }  
