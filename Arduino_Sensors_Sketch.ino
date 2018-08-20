@@ -152,7 +152,7 @@ const int pin_lux_addr = 36;  // Pin ADDR
 
 const unsigned long wait_opening_led = 1000; // Waiting ms for opening led
 const int samples_number = 10;        // Number of samples of DO
-const int co2_samples_number = 15;
+const int co2_samples_number = 25;
 
 OneWire oneWireObjeto(pin_onewire);
 DallasTemperature sensorDS18B20(&oneWireObjeto);
@@ -485,11 +485,11 @@ float sort_and_filter_co2(float* llistat) {
   float llistat_output;
   // Sort normally
   sortArray(llistat, co2_samples_number);
-  // Descartem els 2 primers i 2 ultims valors
-  for(int i = 2; i<samples_number-2; i++) {
+  // Descartem els 5 primers i 10 ultims valors
+  for(int i = 4; i<samples_number-10; i++) {
     llistat_output += llistat[i];
   }
-  return llistat_output / (co2_samples_number - 4);
+  return llistat_output / (co2_samples_number - 15);
 }
 
 // Capture CO2
