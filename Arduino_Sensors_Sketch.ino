@@ -152,7 +152,7 @@ const int pin_lux_addr = 36;  // Pin ADDR
 
 const unsigned long wait_opening_led = 1000; // Waiting ms for opening led
 const int samples_number = 10;        // Number of samples of DO
-const int co2_samples_number = 25;
+const int co2_samples_number = 15;
 
 OneWire oneWireObjeto(pin_onewire);
 DallasTemperature sensorDS18B20(&oneWireObjeto);
@@ -485,11 +485,11 @@ float sort_and_filter_co2(float* llistat) {
   float llistat_output;
   // Sort normally
   sortArray(llistat, co2_samples_number);
-  // Descartem els 5 primers i 10 ultims valors
-  for(int i = 4; i<samples_number-10; i++) {
+  // Descartem els 2 primers i 2 ultims valors
+  for(int i = 2; i<samples_number-2; i++) {
     llistat_output += llistat[i];
   }
-  return llistat_output / (co2_samples_number - 15);
+  return llistat_output / (co2_samples_number - 4);
 }
 
 // Capture CO2
@@ -501,8 +501,27 @@ void capture_CO2() {
     float mostres_co2[co2_samples_number];
     for(int j=0; j<co2_samples_number; j++) {
       //Read voltage
-      int sensorValue = analogRead(pins_co2[i]);  
+      //Paso 1, conversión ADC de la lectura del pin analógico
+      float adc = analogRead(pins_co2[i]);  
+      if (debug){
+        Serial.print(adc);
+        Serial.println(" valor sensor");
+      }
+      //Paso 2, obtener el voltaje
+      float voltaje = adc * 5 / 1023;
+      Serial.print(voltaje);
+      Serial.println(" V");
+
+      float co2conc = voltaje*(-3157.89)+1420;
+      Serial.print(co2conc);
+      Serial.println("ppm CO2");
+      //Paso 3, obtener la variable de medida del sensor
+      float rel_voltaje_variable = 1; //Relación Voltaje/Variable del sensor (en el caso del LM35 es 100)
+      float variable = voltaje * rel_voltaje_variable;
+      Serial.println(variable);
+
       // The analog signal is converted to a voltage 
+      /*
       float voltage = sensorValue*(5000/1024.0);   
       if(voltage == 0)
       {
@@ -514,8 +533,10 @@ void capture_CO2() {
       }    
       int voltage_diference=voltage-470;
       float concentration=voltage_diference*50.0/16.0;
+      */
+
       // Save voltatge value
-      mostres_co2[j] = concentration;
+      mostres_co2[j] = variable;
       delay(100);
     }
     array_co2[i] = sort_and_filter_co2(mostres_co2);
