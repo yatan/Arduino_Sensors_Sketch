@@ -70,7 +70,7 @@ NETWORK SETTINGS
 const char server[] = "sensors.openspirulina.com";
 const int  port = 80;
 // assign a MAC address for the ethernet controller:
-const byte mac[] = {
+byte mac[] = {
     0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED};
 
 // Your GPRS credentials
@@ -79,6 +79,7 @@ const char apn[]  = "internet";
 const char user[] = "";
 const char pass[] = "";
 
+boolean conexio_internet = false;
 
 /*
   _   _ _    _ __  __ ____  ______ _____     _____ ______ _   _  _____  ____  _____   _____
@@ -109,7 +110,7 @@ enum option_internet_type { // Valid internet types
   internet_gprs,
   internet_wifi
 };
-const option_internet_type option_internet = internet_gprs; // None | Ethernet | GPRS Modem | Wifi <-- Why not ? Dream on it
+const option_internet_type option_internet = internet_ethernet; // None | Ethernet | GPRS Modem | Wifi <-- Why not ? Dream on it
 const boolean option_LCD = true; // if LCD 20x04 possible (=1) or not (=0)
 const boolean option_SD = true;   //if SD connexion posible (=1) or not (=0)
 const boolean option_clock = true; //if clock posible (=1) or not (=0)
@@ -373,8 +374,8 @@ float sort_and_filter(int* llistat) {
   // Sort normally
   sortArray(llistat, samples_number);
   // Insert values to final array
-  for(int i = 1; i<samples_number-1; i++) {
-    llistat_output += llistat[i];
+  for(uint8_t r = 1; r<samples_number-1; r++) {
+    llistat_output += llistat[r];
   }
   return llistat_output / (samples_number - 2);
 }
@@ -477,6 +478,7 @@ float capture_lux() {
     return lux_sensor.readLightLevel();
   else if( option_lux == lux_ldr )           // Return Lux value with LDR
     return analogRead(ldr_pin);
+  return 0;
 }
 
 
@@ -486,8 +488,8 @@ float sort_and_filter_co2(float* llistat) {
   // Sort normally
   sortArray(llistat, co2_samples_number);
   // Descartem els 2 primers i 2 ultims valors
-  for(int i = 2; i<samples_number-2; i++) {
-    llistat_output += llistat[i];
+  for(uint8_t l=2; l<co2_samples_number-2; l++) {
+    llistat_output += llistat[l];
   }
   return llistat_output / (co2_samples_number - 4);
 }
@@ -496,51 +498,26 @@ float sort_and_filter_co2(float* llistat) {
 void capture_CO2() {
   if(debug)
     Serial.println(F("Capturing CO2"));
-  for(int i=0; i<num_CO2; i++) {
     // Take co2_samples_number samples of Every co2 sensor
     float mostres_co2[co2_samples_number];
-    for(int j=0; j<co2_samples_number; j++) {
-      //Read voltage
-      //Paso 1, conversión ADC de la lectura del pin analógico
-      float adc = analogRead(pins_co2[i]);  
-      if (debug){
-        Serial.print(adc);
-        Serial.println(" valor sensor");
-      }
-      //Paso 2, obtener el voltaje
-      float voltaje = adc * 5 / 1023;
-      Serial.print(voltaje);
-      Serial.println(" V");
+  for(uint8_t j=0; j<co2_samples_number; j++) {
+    // Read voltage
+    // Paso 1, conversión ADC de la lectura del pin analógico
+    float adc = analogRead(pins_co2[0]);  
+    // Paso 2, obtener el voltaje
+    float voltaje = adc * 5.0 / 1023.0;
 
-      float co2conc = voltaje*(-3157.89)+1420;
-      Serial.print(co2conc);
-      Serial.println("ppm CO2");
-      //Paso 3, obtener la variable de medida del sensor
-      float rel_voltaje_variable = 1; //Relación Voltaje/Variable del sensor (en el caso del LM35 es 100)
-      float variable = voltaje * rel_voltaje_variable;
-      Serial.println(variable);
+    float co2conc = voltaje*(-3157.89)+1420.0;
+    Serial.print(co2conc);
+    Serial.print(" ppm CO2 [");
+    Serial.print(j);
+    Serial.println("]");
 
-      // The analog signal is converted to a voltage 
-      /*
-      float voltage = sensorValue*(5000/1024.0);   
-      if(voltage == 0)
-      {
-        Serial.println(F("[CO2] Fault"));
-      }
-      else if(voltage < 400)
-      {
-        Serial.println(F("[CO2] Preheating"));
-      }    
-      int voltage_diference=voltage-470;
-      float concentration=voltage_diference*50.0/16.0;
-      */
-
-      // Save voltatge value
-      mostres_co2[j] = variable;
-      delay(100);
+    // Save voltatge value
+    mostres_co2[j] = co2conc;
+    delay(100);
     }
-    array_co2[i] = sort_and_filter_co2(mostres_co2);
-  }
+  array_co2[0] = sort_and_filter_co2(mostres_co2);
 }
 
 void lcd_init_msg() {
@@ -896,12 +873,22 @@ boolean send_data_server() {
 }
 
 boolean send_data_ethernet(String cadena) {
+  if(!conexio_internet)
+  {
+    Serial.println(F("[Ethernet] Conecting to router..."));
+    conexio_internet = Ethernet.begin(mac);
+    if(!conexio_internet) {
+      Serial.println(F("[Ethernet] Conection to router Failed"));
+      return false;
+    }
+  }
+  
   eth_client.stop();
   // if there's a successful connection:
   if (eth_client.connect(server, 80))
   {
     if (debug)
-      Serial.println(F("Connecting ethernet..."));
+      Serial.println(F("Connecting to openspirulina..."));
 
     if(debug)
       Serial.println(cadena);
@@ -913,14 +900,14 @@ boolean send_data_ethernet(String cadena) {
     eth_client.println("User-Agent: arduino-ethernet-1");
     eth_client.println("Connection: close");
     eth_client.println();
+    return true;
   }
   else
   {
     // if you couldn't make a connection:
-    Serial.println(F("Connection Failed"));
+    Serial.println(F("Connection to openspirulina Failed"));
     return false;
   }
-  return true;
 }
 
 boolean connect_network() {
@@ -1066,6 +1053,7 @@ void loop() {
     delay(10000);
   }
   // Show init LCD msg
+  if(option_LCD)
   lcd_init_msg();
 
   // Set next timer loop for actual time + delay time (3mins)
@@ -1125,6 +1113,7 @@ void loop() {
     last_send = getTime();
       delay(100);
       last_send += " OK";      
+      if(option_LCD)    
       mostra_LCD();
   }
     else {
@@ -1132,6 +1121,7 @@ void loop() {
       last_send = getTime();
       delay(100);
       last_send += " FAIL";      
+      if(option_LCD)
       mostra_LCD();
     }
   }
@@ -1161,9 +1151,11 @@ void loop() {
         break;
       }
       delay(60000); // 60s * 1000ms
+      if(debug)
+        Serial.print(".");
     }
   }
-  //Serial.flush();
+  Serial.flush();
 }
 
 /*
@@ -1315,7 +1307,10 @@ void setup() {
     // start the Ethernet connection using a fixed IP address and DNS server:
     // Ethernet.begin(mac, ip, myDns, gateway, subnet);
     // DHCP IP ( For automatic IP )
-    Ethernet.begin(mac);
+    conexio_internet = Ethernet.begin(mac);
+    
+    if(!conexio_internet)
+      Serial.println("[Ethernet] Fail obtain IP");
     
     // print the Ethernet board/shield's IP address:
     if(debug) {
