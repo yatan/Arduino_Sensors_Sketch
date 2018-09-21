@@ -827,7 +827,7 @@ boolean send_data_server() {
   // Append DO Sensor
   if(num_DO > 0) {                    // If have DO sensor
     // Previous lux
-    cadena += "&pre-L=";
+    cadena += "&pre_L=";
     cadena += pre_lux;
     // R
     cadena += "&do1_R=";
