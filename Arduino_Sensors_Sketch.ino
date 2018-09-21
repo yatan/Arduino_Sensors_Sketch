@@ -191,7 +191,7 @@ DeviceAddress* array_tSensor_addrs[num_T];
 
 // Lux ambient value
 float lux;
-float pre-lux;
+float pre_lux;
 // Last time sended data
 String last_send;
 // LCD view counter
@@ -675,8 +675,8 @@ void write_SD_Headers() {
     }
     // DO Sensor
     for(int i=0; i<num_DO; i++) {
-      // Pre-Lux value
-      myFile.print(F("PRE-LUX#"));  
+      // pre_lux value
+      myFile.print(F("pre_lux#"));  
       // R
       myFile.print(F("DO_"));
       myFile.print(i);
@@ -746,7 +746,7 @@ void save_to_SD() {
     }
     // DO Sensor
     if(num_DO > 0) {                    // If have DO sensor
-        myFile.print(pre-lux);          // Pre - Lux value
+        myFile.print(pre_lux);          // Pre - Lux value
         myFile.print(F("#"));
       for(int i=0; i<4; i++) {          // R-G-B-RGB 
         myFile.print(array_do1[i]);     // 0-1-2-3
@@ -828,7 +828,7 @@ boolean send_data_server() {
   if(num_DO > 0) {                    // If have DO sensor
     // Previous lux
     cadena += "&pre-L=";
-    cadena += pre-lux;
+    cadena += pre_lux;
     // R
     cadena += "&do1_R=";
     cadena += array_do1[0];
@@ -1098,7 +1098,7 @@ void loop() {
   
   //Capture DO values (Red, Green, Blue, and White)
   if(num_DO > 0) {
-    pre-lux = ir_led1.readLightLevel();
+    pre_lux = ir_led1.readLightLevel();
     capture_DO(); 
     delay(1000);
   } 
