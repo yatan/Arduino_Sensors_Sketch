@@ -126,7 +126,6 @@ const boolean option_clock = true; //if clock posible (=1) or not (=0)
 
       /*   ANALOG PINS  */
 const int pins_ph[num_pH] = {1};      // pH Pins (Analog)
-//const int pins_do[num_DO] = {2};      // DO Ps (Analog)
 const int pins_co2[num_CO2] = {4};     // CO2 pin (Analog)
 #if option_lux == lux_ldr             // Lux sensor with LDR
 const int ldr_pin = 3;                // LDR pin (Analog)
@@ -152,8 +151,8 @@ const int pin_lux_addr = 36;  // Pin ADDR
 */
 
 const unsigned long wait_opening_led = 1000; // Waiting ms for opening led
-const int samples_number = 10;        // Number of samples of DO
-const int co2_samples_number = 15;
+const uint8_t samples_number = 10;        // Number of samples of DO
+const uint8_t co2_samples_number = 15;
 
 OneWire oneWireObjeto(pin_onewire);
 DallasTemperature sensorDS18B20(&oneWireObjeto);
@@ -192,10 +191,11 @@ DeviceAddress* array_tSensor_addrs[num_T];
 
 // Lux ambient value
 float lux;
+float pre-lux;
 // Last time sended data
 String last_send;
 // LCD view counter
-int counts_lcd = 0;
+uint8_t counts_lcd = 0;
 
 // Var for check time to next loop
 uint32_t time_next_loop;
@@ -498,8 +498,8 @@ float sort_and_filter_co2(float* llistat) {
 void capture_CO2() {
   if(debug)
     Serial.println(F("Capturing CO2"));
-    // Take co2_samples_number samples of Every co2 sensor
-    float mostres_co2[co2_samples_number];
+  // Take co2_samples_number samples of Every co2 sensor
+  float mostres_co2[co2_samples_number];
   for(uint8_t j=0; j<co2_samples_number; j++) {
     // Read voltage
     // Paso 1, conversión ADC de la lectura del pin analógico
@@ -675,6 +675,8 @@ void write_SD_Headers() {
     }
     // DO Sensor
     for(int i=0; i<num_DO; i++) {
+      // Pre-Lux value
+      myFile.print(F("PRE-LUX#"));  
       // R
       myFile.print(F("DO_"));
       myFile.print(i);
@@ -744,6 +746,8 @@ void save_to_SD() {
     }
     // DO Sensor
     if(num_DO > 0) {                    // If have DO sensor
+        myFile.print(pre-lux);          // Pre - Lux value
+        myFile.print(F("#"));
       for(int i=0; i<4; i++) {          // R-G-B-RGB 
         myFile.print(array_do1[i]);     // 0-1-2-3
         myFile.print(F("#"));          
@@ -822,6 +826,9 @@ boolean send_data_server() {
 
   // Append DO Sensor
   if(num_DO > 0) {                    // If have DO sensor
+    // Previous lux
+    cadena += "&pre-L=";
+    cadena += pre-lux;
     // R
     cadena += "&do1_R=";
     cadena += array_do1[0];
@@ -1054,7 +1061,7 @@ void loop() {
   }
   // Show init LCD msg
   if(option_LCD)
-  lcd_init_msg();
+    lcd_init_msg();
 
   // Set next timer loop for actual time + delay time (3mins)
   if(option_clock) {
@@ -1091,6 +1098,7 @@ void loop() {
   
   //Capture DO values (Red, Green, Blue, and White)
   if(num_DO > 0) {
+    pre-lux = ir_led1.readLightLevel();
     capture_DO(); 
     delay(1000);
   } 
@@ -1110,11 +1118,11 @@ void loop() {
     if(send_data_server()) {
       // Si s'envia correctament actualitzar last_send
       delay(200);
-    last_send = getTime();
+      last_send = getTime();
       delay(100);
       last_send += " OK";      
       if(option_LCD)    
-      mostra_LCD();
+        mostra_LCD();
   }
     else {
       delay(200);
@@ -1122,7 +1130,7 @@ void loop() {
       delay(100);
       last_send += " FAIL";      
       if(option_LCD)
-      mostra_LCD();
+        mostra_LCD();
     }
   }
 
