@@ -94,7 +94,9 @@ const int num_T = 4;    // Temperature of the culture. Sensor DS18B20.MAX 6
                         // T1_s T1_b -- T2_s T2_b = 4
 const int num_DHT = 1;  // Humidity and temperature ambient sensor. MAX 3
 #define DHTTYPE DHT22   // Type of DHT sensor DHT11 - DHT22
-const int num_PIR = 1;  // PIR movement sensor. MAX 3
+
+const int num_PIR = 1;  // PIR movement sensor. MAX 3 --> S'ha de traure i enlloc seu posar Current pin 
+const int num_current_sensor = 1; //Current sensor. MAX 3 
 const int num_DO = 1;   // Optical Density Sensor Module made by OpenSpirulina includes a RGB led + BH1750 lux sensor
 const int num_pH = 1;   // pH sensor. MAX 3
 const int num_CO2 = 1;  // CO2 sensor MAX ?
@@ -110,10 +112,26 @@ enum option_internet_type { // Valid internet types
   internet_gprs,
   internet_wifi
 };
+
+enum option_current_sensor {    //No sensor; ACS 712:Sensor inside; SCT013: no invasive
+  none,
+  acs712,    //Invasive sensor. Source:  https://naylampmechatronics.com/blog/48_tutorial-sensor-de-corriente-acs712.html
+  sct013    //Non invasive sensor with internal burden resistence. http://www.gonzalogalvan.es/medidor-de-consumo-lectura-de-la-corriente-con-arduino/ 
+};
+
+//float sensibility = 0.185; // ACS712 de 5 Amperes
+float sensibility = 0.100;    //ACS712 de 20 Amperes
+//float sensibility = 0.066;  //ACS712 de 30 Amperes
+//const int regulation = 29;    // SCT013 de 15 Amperes con resistencia interna.
+//const int regulation = 10;    // SCT013 de 30 Amperes con resistencia interna ATENTION CONFIRM VALUE: 
+
+
 const option_internet_type option_internet = internet_ethernet; // None | Ethernet | GPRS Modem | Wifi <-- Why not ? Dream on it
 const boolean option_LCD = true; // if LCD 20x04 possible (=1) or not (=0)
 const boolean option_SD = true;   //if SD connexion posible (=1) or not (=0)
 const boolean option_clock = true; //if clock posible (=1) or not (=0)
+
+
 
 /*
   _____ _____ _   _  _____
@@ -134,9 +152,11 @@ const int ldr_pin = 3;                // LDR pin (Analog)
 const int pin_switch_calibracio = 30; // Pin for pH calibration switch
 #define pin_onewire 3                 // where 1-wire is connected
 #define pin_sd_card 4                 // Pin lector SD
-const int pins_rgb[3] = {24,25,26};      // DO RGB Laser Pins (Digital)
+const int pins_rgb[3] = {23,25,27};      // DO RGB Laser Pins (Digital)
 const int pins_dht[num_DHT] = {8};    // DHT Pins
-const int pins_pir[num_PIR] = {9};    // PIR Pins
+const int pins_pir[num_PIR] = {9};    // PIR Pins  //S'ha de traure.
+const int pins_current[num_current_sensor] = {41}; // Current sensor PINs, next: 43,45
+
 #define SerialAT Serial2              // Serial port for GPRS Modem
 const int pin_lux_addr = 36;  // Pin ADDR
 
@@ -164,30 +184,38 @@ LiquidCrystal_I2C lcd(I2C_ADDR, 20, 4);     // LCD Type Columns * Lines
 // RTC DS3231 (clock sensor)
 RTC_DS3231 rtc;
 // Array of DHT sensors
-DHT* array_DHT[num_DHT];
-// Array temperatures of DHT
-float array_DHT_T[num_DHT];
-// Array Humiditys of DHT
-float array_DHT_H[num_DHT];
+  DHT* array_DHT[num_DHT];
+  // Array temperatures of DHT
+  float array_DHT_T[num_DHT];
+  // Array Humiditys of DHT
+  float array_DHT_H[num_DHT];
 // Array of pH sensors
-float array_ph[num_pH];
+  float array_ph[num_pH];
 // Array of PIR sensors
-int array_pir[num_PIR];
+  int array_pir[num_PIR];
+// Array of Current sensors
+  float array_current[num_current_sensor];
+  
+
+  
 // Array of DO sensors [R,G,B,RGB]
-float array_do1[4];
+  float array_do1[4];
 // Array of CO2 sensors
-float array_co2[num_CO2];
-BH1750 ir_led1(0x23);    //Si el ADDR està inactiu
-// Lux sensor with BH1750
-BH1750 lux_sensor(0x5C);      //Si el ADDR està amb més de 0.7V
+  float array_co2[num_CO2];
+//Define lux sensors
+  BH1750 ir_led1(0x23);    //Si el ADDR està inactiu, correspon al DO.
+  // Lux sensor with BH1750
+  BH1750 lux_sensor(0x5C);      //Si el ADDR està amb més de 0.7V, correspon l'irradiació que arriva a l'hivernacle.
 
-DeviceAddress sensor_t1_b = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-DeviceAddress sensor_t1_s = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-
-DeviceAddress sensor_t2_b = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-DeviceAddress sensor_t2_s = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-
-DeviceAddress* array_tSensor_addrs[num_T];
+//Define Temperature sensors adress: 
+  //Define pair of Temp1 sensors
+  DeviceAddress sensor_t1_b = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+  DeviceAddress sensor_t1_s = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+  // Define pair of Temp2 sensors
+  DeviceAddress sensor_t2_b = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+  DeviceAddress sensor_t2_s = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+  //Array of Temperatures from de culture 
+  DeviceAddress* array_tSensor_addrs[num_T];
 
 // Lux ambient value
 float lux;
@@ -293,8 +321,8 @@ String getDate()
   }
   return hora;
 }
-
-// Setup DS18B20 array address
+//Pregunta: això s'ha de configurar cada cop si número de temperatures diferent de 4??
+// Setup DS18B20 array address 
 void setup_DS18B20_addr() {
   array_tSensor_addrs[0] = &sensor_t1_b;
   array_tSensor_addrs[1] = &sensor_t1_s;
@@ -324,7 +352,8 @@ void capture_dht() {
   }
 }
 
-// Return ph value from SensorPin
+
+// Return ph value from SensorPin--> Pregunta, com sap quin és el SensorPin...?
 float capture_ph(int SensorPin) {
   unsigned long int avgValue;  //Store the average value of the sensor feedback
   int buf[10],temp;
@@ -365,6 +394,34 @@ boolean detecta_PIR(int pin) {
   else
     return false;
 }
+
+//Detect intensity with Invasive sensor ACS712
+void capture_current_acs712(){
+
+  float array_tension[num_current_sensor]; //definir un array intermig per tal d'obtenir la tensió que dóna el sensor.
+
+for(int i=0; i<num_current_sensor; i++) {
+ 
+    //Aquí estaria bé posar que agafi sample_number mostres i després faci el sort_and_filter, 
+    //però com va amb array me sembla que ma faré un embolic ben gros...amb una mesura estarà prou bé... 
+  
+ array_tension[i]= analogRead(pins_current[i])*(5.0/1023.0);   // obtain V from de current sensor
+    array_current[i] = (array_tension[i]-2.5)/sensibility;      //transform V to I
+    delay(100);
+      if(debug) {
+        Serial.print("Intensitat: ");
+        Serial.print(array_current[i]);
+        Serial.println(" A");
+      }
+        
+ }
+}
+
+ void capture_current_sct013 (){
+  
+ }
+
+
 
 // Functions for Optical Density (DO)
 
@@ -1095,6 +1152,14 @@ void loop() {
     else
       array_pir[i] = 0;
   } 
+
+//Capture current depending on the sensor 
+if(option_current_sensor == acs712)
+  capture_current_acs712();
+
+   else if (option_current_sensor == sct013)
+  capture_current_sct013();
+    
   
   //Capture DO values (Red, Green, Blue, and White)
   if(num_DO > 0) {
