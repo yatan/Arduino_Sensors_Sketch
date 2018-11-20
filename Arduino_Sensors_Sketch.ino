@@ -59,8 +59,8 @@ const boolean debug = true;
 AUTHENTICATION ARDUINO
 *****/
 //Define de identity of Arduino
-const int id_arduino = 1;
-const int pin_arduino = 1234;
+const int id_arduino = 21;
+const int pin_arduino = 12345;
 
 /****
 NETWORK SETTINGS 
@@ -99,7 +99,7 @@ const int num_PIR = 1;  // PIR movement sensor. MAX 3 --> S'ha de traure i enllo
 const int num_current_sensor = 1; //Current sensor. MAX 3 
 const int num_DO = 1;   // Optical Density Sensor Module made by OpenSpirulina includes a RGB led + BH1750 lux sensor
 const int num_pH = 1;   // pH sensor. MAX 3
-const int num_CO2 = 1;  // CO2 sensor MAX ?
+const int num_CO2 = 0;  // CO2 sensor MAX ?
 enum option_lux_type {  // Valid option_lux_type
   lux_none,
   lux_ldr,
@@ -119,6 +119,8 @@ enum option_current_sensor {    //No sensor; ACS 712:Sensor inside; SCT013: no i
   sct013    //Non invasive sensor with internal burden resistence. http://www.gonzalogalvan.es/medidor-de-consumo-lectura-de-la-corriente-con-arduino/ 
 };
 
+
+//Choose the sensibility of current sensor:
 //float sensibility = 0.185; // ACS712 de 5 Amperes
 float sensibility = 0.100;    //ACS712 de 20 Amperes
 //float sensibility = 0.066;  //ACS712 de 30 Amperes
@@ -143,22 +145,22 @@ const boolean option_clock = true; //if clock posible (=1) or not (=0)
 */
 
       /*   ANALOG PINS  */
-const int pins_ph[num_pH] = {1};      // pH Pins (Analog)
-const int pins_co2[num_CO2] = {4};     // CO2 pin (Analog)
+const int pins_ph[num_pH] = {8};      // pH Pins (Analog)
+const int pins_co2[1] = {11};     // CO2 pin (Analog)//const int pins_co2[num_CO2] = {11};     // CO2 pin (Analog)
 #if option_lux == lux_ldr             // Lux sensor with LDR
 const int ldr_pin = 3;                // LDR pin (Analog)
 #endif
       /*   DIGITAL PINS  */
-const int pin_switch_calibracio = 30; // Pin for pH calibration switch
-#define pin_onewire 3                 // where 1-wire is connected
+const int pin_switch_calibracio = 43; // Pin for pH calibration switch
+#define pin_onewire 23                 // where 1-wire is connected
 #define pin_sd_card 4                 // Pin lector SD
-const int pins_rgb[3] = {23,25,27};      // DO RGB Laser Pins (Digital)
-const int pins_dht[num_DHT] = {8};    // DHT Pins
-const int pins_pir[num_PIR] = {9};    // PIR Pins  //S'ha de traure.
-const int pins_current[num_current_sensor] = {41}; // Current sensor PINs, next: 43,45
+const int pins_rgb[3] = {25,27,29};      // DO RGB Laser Pins (Digital)
+const int pins_dht[num_DHT] = {26};    // DHT Pins
+const int pins_pir[num_PIR] = {32};    // PIR Pins  //S'ha de traure.
+const int pins_current[num_current_sensor] = {38}; // Current sensor PINs, next: 39,40
 
 #define SerialAT Serial2              // Serial port for GPRS Modem
-const int pin_lux_addr = 36;  // Pin ADDR
+const int pin_lux_addr = 24;  // Pin ADDR
 
 
 /*
@@ -179,7 +181,7 @@ DallasTemperature sensorDS18B20(&oneWireObjeto);
 // Array de temperatures amb tamany num_temp sensors assignats
 float array_temps[num_T];
 // LCD I2C
-#define I2C_ADDR    0x27                    // LCD I2C address 0x27 - Alter address 0x3F
+#define I2C_ADDR    0x3F                    // LCD I2C address 0x27 - Alter address 0x3F
 LiquidCrystal_I2C lcd(I2C_ADDR, 20, 4);     // LCD Type Columns * Lines
 // RTC DS3231 (clock sensor)
 RTC_DS3231 rtc;
@@ -195,6 +197,12 @@ RTC_DS3231 rtc;
   int array_pir[num_PIR];
 // Array of Current sensors
   float array_current[num_current_sensor];
+  float array_current_ini[num_current_sensor];
+  float array_current_end[num_current_sensor];
+  float consumption;
+
+//Time waiting for correct agitation of culture for correct mesuring DO
+const unsigned long time_current = 30L * 1000L; //Time un seconds between current ini current end measure.
   
 
   
@@ -209,11 +217,13 @@ RTC_DS3231 rtc;
 
 //Define Temperature sensors adress: 
   //Define pair of Temp1 sensors
-  DeviceAddress sensor_t1_b = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-  DeviceAddress sensor_t1_s = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+  DeviceAddress sensor_t1_b = {0x28, 0xFF, 0x72, 0x88, 0x24, 0x17, 0x03, 0x09};
+DeviceAddress sensor_t1_s = {0x28, 0xFF, 0x1B, 0xD2, 0x24, 0x17, 0x03, 0x28};
   // Define pair of Temp2 sensors
-  DeviceAddress sensor_t2_b = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-  DeviceAddress sensor_t2_s = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+DeviceAddress sensor_t2_b = {0x28, 0xFF, 0xCA, 0xE5, 0x80, 0x14, 0x02, 0x16};
+DeviceAddress sensor_t2_s = {0x28, 0xFF, 0x89, 0xBB, 0x60, 0x17, 0x05, 0x6D};
+
+
   //Array of Temperatures from de culture 
   DeviceAddress* array_tSensor_addrs[num_T];
 
@@ -230,7 +240,7 @@ uint32_t time_next_loop;
 // 10 minute delay
 const uint32_t delay_next_loop = 10L * 60L;
 // 20 seconds step delay
-const unsigned long step_delay_time = 20L * 1000L;
+const unsigned long step_delay_time = 1L * 1L;  //  20L * 1000L;
 
 // GPRS Modem
 #ifdef DUMP_AT_COMMANDS
@@ -815,6 +825,17 @@ void save_to_SD() {
       myFile.print(array_co2[i]);
       myFile.print(F("#"));
     }
+    
+    // Current sensor initial
+    for(int i=0; i<num_current_sensor; i++) {
+       myFile.print(array_current_ini[i]);
+       myFile.print(F("#"));     
+    }
+    // Current sensor end
+    for(int i=0; i<num_current_sensor; i++) {
+       myFile.print(array_current_end[i]);
+       myFile.print(F("#"));     
+    }
 
     // End of line
     myFile.println("");
@@ -918,6 +939,21 @@ boolean send_data_server() {
     cadena += "=";
     cadena += array_co2[i];
   }
+
+  //Append Current initial
+for(int i=0; i<num_current_sensor; i++) {
+    cadena += "&I_ini";
+    cadena += i+1;
+    cadena += "=";
+    cadena += array_current_ini[i];
+  }
+  //Append Current end
+for(int i=0; i<num_current_sensor; i++) {
+    cadena += "&I_end";
+    cadena += i+1;
+    cadena += "=";
+    cadena += array_current_end[i];
+  }  
   
   if(debug) {
     Serial.print(F("Server petition: "));
@@ -1127,6 +1163,37 @@ void loop() {
     delay(25);
   }
 
+
+
+//Capture current depending on the sensor 
+if(num_current_sensor >0) {     //He posat aquesta expressió però en realitat hauria d'anar amb option_current_sensor, 
+  capture_current_acs712();     //però no sé perquè al compilar em dóna error, així com que de moment només hi ha el sensor
+                                //ACS712, ho deixo així i ja vindrà el mestre i ho implementarà.  
+
+  for (int i=0; i<num_current_sensor; i++){
+  array_current_ini[i]=array_current[i];
+  consumption =+ array_current_ini[i];
+  }
+    if (consumption > 0) {
+      if (debug) {
+    Serial.print("Intensitat:");
+    Serial.println(consumption);
+      }
+      delay(time_current);
+    }
+    
+  capture_current_acs712();    
+  for (int i=0; i<num_current_sensor; i++){
+  array_current_end[i]=array_current[i];
+  }
+  
+  }                       
+   
+/*  Això com me dóna error ho deixo estar...
+   else if (option_current_sensor == sct013)
+  capture_current_sct013();
+  
+*/
   // Si tenim sondes de temperatura
   if(num_T > 0) {
     capture_temps();
@@ -1153,12 +1220,6 @@ void loop() {
       array_pir[i] = 0;
   } 
 
-//Capture current depending on the sensor 
-if(option_current_sensor == acs712)
-  capture_current_acs712();
-
-   else if (option_current_sensor == sct013)
-  capture_current_sct013();
     
   
   //Capture DO values (Red, Green, Blue, and White)
